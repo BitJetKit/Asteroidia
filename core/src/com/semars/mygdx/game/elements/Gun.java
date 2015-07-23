@@ -11,17 +11,16 @@ public class Gun {
     private float gunX;
     private float gunY;
 
-
     public Gun(float angle, float x, float y) {
         gunAngle = angle;
         gunX = x;
         gunY = y;
     }
 
-    public ShotActor createShot() {
+    /*public ShotActor createShot() {
         ShotActor shot = new ShotActor(gunX, gunY, gunAngle);
         return shot;
-    }
+    }*/
 
     public void setGunAngle(float gunAngle) {
         this.gunAngle = gunAngle;

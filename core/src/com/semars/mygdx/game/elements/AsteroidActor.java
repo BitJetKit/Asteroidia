@@ -31,6 +31,7 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     private float angle;
     private Rectangle boundingRectangle = new Rectangle();
     private Vector2 currentPos = new Vector2();
+    private Vector2 worldPos = new Vector2();
     private Vector2 moveDirection = new Vector2();
     private Vector2 moveVelocity = new Vector2();
     private Vector2 moveAmount = new Vector2();
@@ -39,9 +40,10 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     private boolean isActive;
     private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
 
-    public AsteroidActor() {
-        width = 42;
-        height = 42;
+    public AsteroidActor(Vector2 pos, World world, int actorIndex, int collisionGroup) {
+        super(pos, world, actorIndex, collisionGroup);
+        width = 84;
+        height = 84;
         angle = 90;
         texture = new Texture(Gdx.files.internal("asteroidMed1.png"));
         setBounds(-1 * width, -1 * height, width, height);
@@ -53,14 +55,14 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     }
 
     @Override
-    public void createBody(World world, Vector2 pos) {
+    public void createBody(World world, Vector2 pos, float angle, float density, float restitution) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(pos.x/Asteroidia.CONVERSION, pos.y/Asteroidia.CONVERSION);
+        bodyDef.position.set(pos.x * Asteroidia.CONVERT_TO_METERS, pos.y * Asteroidia.CONVERT_TO_METERS);
         bodyDef.angle = angle;
         body = world.createBody(bodyDef);
         CircleShape shape = new CircleShape();
-        shape.setRadius(radius / Asteroidia.CONVERSION / 2);
+        shape.setRadius(radius * Asteroidia.CONVERT_TO_METERS / 2);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
@@ -78,6 +80,8 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         super.act(delta);
         move();
         wrapEdge();
+//        updateWorldPos();
+        setRotation(body.getAngle() * MathUtils.radiansToDegrees);
     }
 
     public void prepareMove() {
@@ -119,43 +123,6 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         }
     }
 
-    public void randomizePosOutside() {
-        switch (MathUtils.random(3)) {
-            // Top
-            case 0: {
-                currentPos.y = Asteroidia.HEIGHT + height;
-                currentPos.x = MathUtils.random(-1 * width, Asteroidia.WIDTH + width);
-                setPosition(currentPos.x, currentPos.y);
-                boundingRectangle.setPosition(currentPos.x, currentPos.y);
-                break;
-            }
-            // Right
-            case 1: {
-                currentPos.y = MathUtils.random(-1 * height, Asteroidia.HEIGHT + height);
-                currentPos.x = Asteroidia.WIDTH + width;
-                setPosition(currentPos.x, currentPos.y);
-                boundingRectangle.setPosition(getX(), getY());
-                break;
-            }
-            // Bottom
-            case 2: {
-                currentPos.y = -1 * getHeight();
-                currentPos.x = MathUtils.random(-1 * width, Asteroidia.WIDTH + width);
-                setPosition(currentPos.x, currentPos.y);
-                boundingRectangle.setPosition(getX(), getY());
-                break;
-            }
-            // Left
-            case 3: {
-                currentPos.y = MathUtils.random(-1 * height, Asteroidia.HEIGHT + height);
-                currentPos.x = -1 * width;
-                setPosition(currentPos.x, currentPos.y);
-                boundingRectangle.setPosition(getX(), getY());
-                break;
-            }
-        }
-    }
-
     public void wrapEdge() {
         // Top
         if (currentPos.y > Asteroidia.HEIGHT) {
@@ -176,6 +143,8 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         setPosition(currentPos.x, currentPos.y);
         boundingRectangle.setPosition(getX(), getY());
     }
+
+    // Getters and Setters
 
     public Vector2 getCurrentPos() {
         return currentPos;

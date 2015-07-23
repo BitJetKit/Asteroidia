@@ -24,41 +24,42 @@ public class ShotActor extends SpaceActor {
     private Texture texture;
     private int width;
     private int height;
-    private float x;
-    private float y;
     private Vector2 currentPos = new Vector2();
     private float angle;
     private float moveSpeed;
     private float lifeTime;
+    private boolean isActive;
     private Rectangle boundingRectangle;
+    private World world;
 
-    private boolean isDestroyed;
-
-    public ShotActor(float x, float y, float angle) {
+    public ShotActor(Vector2 pos, World world, int actorIndex, int collisionGroup, float angle) {
+        super(pos, world, actorIndex, collisionGroup);
         texture = new Texture(Gdx.files.internal("laserBlue.png"));
-        width = 4;
-        height = 14;
+        width = 80;
+        height = 80;
         this.angle = angle;
         moveSpeed = 300f;
         lifeTime = 0;
         setSize(width, height);
-        setX(x);
-        setY(y);
-        currentPos.set(x, y);
+        setX(pos.x);
+        setY(pos.y);
+        currentPos.set(pos);
         setRotation(angle);
-        boundingRectangle = new Rectangle(x, y, width, height);
+        isActive = true;
+        this.world = world;
+        boundingRectangle = new Rectangle(pos.x, pos.y, width, height);
     }
 
     @Override
-    public void createBody(World world, Vector2 pos) {
+    public void createBody(World world, Vector2 pos, float angle, float density, float restitution) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(pos.x/Asteroidia.CONVERSION, pos.y/Asteroidia.CONVERSION);
+        bodyDef.position.set(pos.x / Asteroidia.CONVERT_TO_METERS, pos.y/Asteroidia.CONVERT_TO_METERS);
         bodyDef.angle = angle;
         body = world.createBody(bodyDef);
-        body.isBullet();
+        body.setBullet(true);
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(getWidth() / Asteroidia.CONVERSION / 2, getHeight() / Asteroidia.CONVERSION / 2);
+        shape.setAsBox(getWidth() * Asteroidia.CONVERT_TO_METERS / 2, getHeight() * Asteroidia.CONVERT_TO_METERS / 2);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
@@ -70,9 +71,11 @@ public class ShotActor extends SpaceActor {
     public void act(float delta) {
         super.act(delta);
         move();
+        updateWorldPos();
+        setRotation(body.getAngle() * MathUtils.radiansToDegrees);
         //wrapEdge();
         if (lifeTime > 3f) {
-            destroy();
+            destroy(world);
         }
         lifeTime += delta;
     }
@@ -93,9 +96,11 @@ public class ShotActor extends SpaceActor {
     }
 
     @Override
-    public void destroy() {
-        setVisible(false);
-        isDestroyed = true;
+    public void destroy(World world) {
+        if (isActive) {
+            world.destroyBody(body);
+            isActive = false;
+        }
     }
 
     public boolean checkCollision(Rectangle boundingRectangle) {
@@ -129,12 +134,14 @@ public class ShotActor extends SpaceActor {
         boundingRectangle.setPosition(x, y);
     }*/
 
+    // Getters and Setters
+
     public Vector2 getCurrentPos() {
         return currentPos;
     }
 
-    public boolean isDestroyed() {
-        return isDestroyed;
+    public boolean isActive() {
+        return isActive;
     }
 
     public Rectangle getBoundingRectangle() {
