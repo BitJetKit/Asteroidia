@@ -21,7 +21,7 @@ public abstract class SpaceActor extends Actor {
     private ActorData actorData;
     private Vector2 worldPos;
 
-    public SpaceActor(Vector2 pos, World world, int actorIndex, int collisionGroup) {
+    public SpaceActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup) {
         actorData = new ActorData(actorIndex, collisionGroup);
         //worldPos = new Vector2();
         //createBody(world, pos, 0, 1f, 1f);
@@ -39,28 +39,29 @@ public abstract class SpaceActor extends Actor {
 
     public abstract void move();
 
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution) {
+    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(pos.x * Asteroidia.CONVERT_TO_METERS, pos.y * Asteroidia.CONVERT_TO_METERS);
+        bodyDef.position.set(pos.x, pos.y);
         bodyDef.angle = angle;
         body = world.createBody(bodyDef);
 
         PolygonShape shape = new PolygonShape();
-        //shape.setAsBox(getWidth() / Asteroidia.CONVERSION / 2, getHeight() / Asteroidia.CONVERSION / 2);
         shape.setAsBox(0, 0);
         System.out.println("SpaceActor. w: " + getWidth() + " h: " + getHeight());
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = density;
         fixtureDef.restitution = restitution;
+        fixtureDef.filter.categoryBits = categoryBits;
+        fixtureDef.filter.maskBits = maskBits;
         body.createFixture(fixtureDef);
         body.setUserData(actorData);
         shape.dispose();
     }
 
     public void updateWorldPos(){
-        worldPos.set(body.getPosition().x * Asteroidia.CONVERT_TO_METERS, body.getPosition().y * Asteroidia.CONVERT_TO_METERS);
+        worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
     public void randomizePosOutside() {
@@ -100,6 +101,7 @@ public abstract class SpaceActor extends Actor {
         if (isActive) {
             world.destroyBody(body);
             isActive = false;
+            remove();
         }
     }
 
@@ -110,5 +112,13 @@ public abstract class SpaceActor extends Actor {
 
     public ActorData getActorData() {
         return actorData;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 }

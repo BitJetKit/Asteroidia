@@ -25,62 +25,106 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     private Body body;
     private Fixture fixture;
     private Texture texture;
-    private int width;
-    private int height;
+    private ActorData actorData;
+    private float width;
+    private float height;
     private float radius;
     private float angle;
-    private Rectangle boundingRectangle = new Rectangle();
-    private Vector2 currentPos = new Vector2();
+    private float rotationSpeed;
+    private float moveSpeed;
     private Vector2 worldPos = new Vector2();
     private Vector2 moveDirection = new Vector2();
     private Vector2 moveVelocity = new Vector2();
     private Vector2 moveAmount = new Vector2();
-    private float moveSpeed;
+    private Vector2 moveForce = new Vector2();
     private boolean isMoving;
     private boolean isActive;
     private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
+    private AsteroidType asteroidType;
+    private int scoreGiven;
 
-    public AsteroidActor(Vector2 pos, World world, int actorIndex, int collisionGroup) {
+    public AsteroidActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, AsteroidType asteroidType) {
         super(pos, world, actorIndex, collisionGroup);
-        width = 84;
-        height = 84;
-        angle = 90;
-        texture = new Texture(Gdx.files.internal("asteroidMed1.png"));
-        setBounds(-1 * width, -1 * height, width, height);
-        boundingRectangle.set(getX(), getY(), getWidth(), getHeight());
-        currentPos.set(getX(), getY());
-        moveSpeed = 15f;
+        actorData = new ActorData(actorIndex, collisionGroup);
+        this.asteroidType = asteroidType;
+        switch (asteroidType) {
+            case SMALL: {
+                texture = new Texture(Gdx.files.internal("asteroidSmall1.png"));
+                width = 0.28f;
+                height = 0.28f;
+                scoreGiven = 10;
+                moveSpeed = moveSpeed * 4f;
+                break;
+            }
+            case MEDIUM: {
+                texture = new Texture(Gdx.files.internal("asteroidMed1.png"));
+                width = 0.84f;
+                height = 0.84f;
+                scoreGiven = 25;
+                break;
+            }
+            case LARGE: {
+                texture = new Texture(Gdx.files.internal("asteroidLarge3.png"));
+                width = 1.80f;
+                height = 1.66f;
+                scoreGiven = 50;
+                moveSpeed = moveSpeed /1000f;
+                break;
+            }
+        }
+        angle = 0;
+        moveSpeed = 0.03f;
+        rotationSpeed = 0.5f;
+        radius = width / 2f;
+        setBounds(pos.x, pos.y, width, height);
+        worldPos.set(pos.x, pos.y);
         isMoving = false;
         setVisible(false);
+        System.out.println("catBits: " + collisionGroup.getCategoryBits() + ", mask: " + collisionGroup.getMaskBits());
+        createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
+        setIsActive(true);
+    }
+
+    public enum AsteroidType {
+        SMALL,
+        MEDIUM,
+        LARGE
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution) {
+    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(pos.x * Asteroidia.CONVERT_TO_METERS, pos.y * Asteroidia.CONVERT_TO_METERS);
+        bodyDef.position.set(pos.x, pos.y);
         bodyDef.angle = angle;
         body = world.createBody(bodyDef);
+        body.setUserData(actorData);
+
         CircleShape shape = new CircleShape();
-        shape.setRadius(radius * Asteroidia.CONVERT_TO_METERS / 2);
+        shape.setRadius(radius);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
+        fixtureDef.filter.categoryBits = categoryBits;
+        fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
         shape.dispose();
     }
 
     @Override
     public void draw (Batch batch, float parentAlpha) {
-        batch.draw(texture, getX(), getY(), width, height);
+        batch.draw(texture, worldPos.x - width / 2, worldPos.y - height / 2, this.width / 2, this.height / 2, this.width, this.height,
+                this.getScaleX(), this.getScaleY(), this.getRotation(), 0, 0, texture.getWidth(), texture.getHeight(), false, false);
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
         move();
+        //restrictToWorld();
+        updateWorldPos();
         wrapEdge();
-//        updateWorldPos();
+        setPosition(worldPos.x, worldPos.y);
         setRotation(body.getAngle() * MathUtils.radiansToDegrees);
     }
 
@@ -89,16 +133,15 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         float moveDirectionY = MathUtils.random(Asteroidia.HEIGHT);
         moveDirection.set(moveDirectionX - getX(), moveDirectionY - getY()).nor();
         moveVelocity.set(moveDirection.scl(moveSpeed));
-        moveAmount.set(moveVelocity.scl(Gdx.graphics.getDeltaTime()));
+        moveForce.set(moveVelocity.scl(Asteroidia.STEP * body.getMass()));
     }
 
     @Override
     public void move() {
         if (isMoving) {
-            currentPos.add(moveAmount);
-            setX(currentPos.x);
-            setY(currentPos.y);
-            boundingRectangle.setPosition(currentPos.x, currentPos.y);
+            body.applyForceToCenter(moveForce, true);
+            body.setLinearVelocity(moveVelocity);
+            body.setAngularVelocity(rotationSpeed);
         }
         else {
             prepareMove();
@@ -106,55 +149,113 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         }
     }
 
-    public boolean checkCollision(Rectangle boundingRectangle) {
-        if (boundingRectangle.getX() < this.getBoundingRectangle().x || boundingRectangle.getY() < this.getBoundingRectangle().y) {
-            return Intersector.overlaps(boundingRectangle, this.boundingRectangle);
-        }
-        return false;
-    }
-
     @Override
     public void destroy(World world) {
         if (isActive) {
-            world.destroyBody(body);
             isActive = false;
+            world.destroyBody(body);
             killSound.play();
             isMoving = false;
+            System.out.println("Destroyed " + actorData.actorIndex + ", Asteroid");
+            remove();
         }
     }
 
     public void wrapEdge() {
         // Top
-        if (currentPos.y > Asteroidia.HEIGHT) {
-            currentPos.y = currentPos.y - Asteroidia.HEIGHT - height;
+        if (worldPos.y - height/2 > Asteroidia.HEIGHT) {
+            worldPos.y = worldPos.y - Asteroidia.HEIGHT - height/2;
         }
         // Right
-        if (currentPos.x > Asteroidia.WIDTH) {
-            currentPos.x = currentPos.x - Asteroidia.WIDTH - width;
+        if (worldPos.x - height/2 > Asteroidia.WIDTH) {
+            worldPos.x = worldPos.x - Asteroidia.WIDTH - width/2;
         }
         // Bottom
-        if (currentPos.y < -1 * height) {
-            currentPos.y = Asteroidia.HEIGHT - currentPos.y - height;
+        if (worldPos.y < -1 * height/2) {
+            worldPos.y = Asteroidia.HEIGHT - worldPos.y - height/2;
         }
         // Left
-        if (currentPos.x < -1 * width) {
-            currentPos.x = Asteroidia.WIDTH - currentPos.x - width;
+        if (worldPos.x < -1 * width/2) {
+            worldPos.x = Asteroidia.WIDTH - worldPos.x - width/2;
         }
-        setPosition(currentPos.x, currentPos.y);
-        boundingRectangle.setPosition(getX(), getY());
+        body.setTransform(worldPos, body.getAngle());
     }
 
-    // Getters and Setters
-
-    public Vector2 getCurrentPos() {
-        return currentPos;
+    @Override
+    public void updateWorldPos() {
+        worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
-    public Rectangle getBoundingRectangle() {
-        return boundingRectangle;
+    public void randomizePosOutside() {
+        switch (MathUtils.random(2)) {
+            // Top
+            case 0: {
+                worldPos.y = Asteroidia.HEIGHT + height;
+                worldPos.x = MathUtils.random(-1 * width, Asteroidia.WIDTH + width);
+                break;
+            }
+            // Right
+            case 1: {
+                worldPos.y = MathUtils.random(-1 * height, Asteroidia.HEIGHT + height);
+                worldPos.x = Asteroidia.WIDTH + width;
+                break;
+            }
+            // Bottom
+            /*case 2: {
+                worldPos.y = -1 * height;
+                worldPos.x = MathUtils.random(-1 * width, Asteroidia.WIDTH + width);
+                break;
+            }*/
+            // Left
+            case 2: {
+                worldPos.y = MathUtils.random(-1 * height, Asteroidia.HEIGHT + height);
+                worldPos.x = -1 * width;
+                break;
+            }
+        }
+        if (worldPos.dst(Asteroidia.actorManager.getPlayerActor().getWorldPos()) < 10f) {
+            randomizePosOutside();
+        }
+        body.setTransform(worldPos, angle);
+    }
+
+    /*/////////////////
+    Getters and Setters
+    *//////////////////
+
+    public void setIndex(int newIndex){
+        actorData.setInfo(newIndex, actorData.getCollisionGroup());
+        body.setUserData(actorData);
+    }
+
+    public int getScoreGiven() {
+        return scoreGiven;
+    }
+
+    @Override
+    public ActorData getActorData() {
+        return actorData;
+    }
+
+    public Vector2 getWorldPos() {
+        return worldPos;
     }
 
     public Texture getTexture() {
         return texture;
+    }
+
+    @Override
+    public boolean isActive() {
+        return isActive;
+    }
+
+    @Override
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public AsteroidType getAsteroidType() {
+        return asteroidType;
     }
 }

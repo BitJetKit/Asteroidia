@@ -5,14 +5,14 @@ package com.semars.mygdx.game.elements;
  */
 public class ActorData {
 
-    int collisionGroup;
+    CollisionGroup collisionGroup;
     int actorIndex;
 
-    public ActorData(int actorIndex, int collisiongroup){
+    public ActorData(int actorIndex, CollisionGroup collisiongroup){
         setInfo(actorIndex, collisiongroup);
     }
 
-    public void setInfo(int actorIndex, int collisiongroup){
+    public void setInfo(int actorIndex, CollisionGroup collisiongroup){
         this.actorIndex = actorIndex;
         this.collisionGroup = collisiongroup;
     }
@@ -21,7 +21,7 @@ public class ActorData {
         return this.actorIndex;
     }
 
-    public int getCollisionGroup() {
+    public CollisionGroup getCollisionGroup() {
         return this.collisionGroup;
     }
 }

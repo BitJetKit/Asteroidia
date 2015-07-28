@@ -20,7 +20,7 @@ public abstract class EnemyActor extends SpaceActor {
     public Vector2 moveAmount = new Vector2();
     public float moveDistance;
 
-    public EnemyActor(Vector2 pos, World world, int actorIndex, int collisionGroup) {
+    public EnemyActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup) {
         super(pos, world, actorIndex, collisionGroup);
         texture = new Texture(Gdx.files.internal("asteroidMed1.png"));
         setBounds(50, 50, width, height);

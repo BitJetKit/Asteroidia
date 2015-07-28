@@ -13,9 +13,8 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
+import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
-
-import java.util.Iterator;
 
 /**
  * Created by semar on 6/28/15.
@@ -25,8 +24,8 @@ public class PlayerActor extends SpaceActor {
     private Fixture fixture;
     private ActorData actorData;
     private Texture texture;
-    private float playerWidth;
-    private float playerHeight;
+    private float width;
+    private float height;
     private float moveSpeed;
     private float angle;
     private float moveAmtPerTimestep;
@@ -44,42 +43,45 @@ public class PlayerActor extends SpaceActor {
     private Vector2 moveForce = new Vector2();
     private float moveDistance;
     private float delta;
-    private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("explosion.mp3"));
-    private Gun gun;
-    private float gunX;
-    private float gunY;
-    private float gunAngle;
+    private Array<Gun> gunsEquipped;
+    private Gun gunFront;
+    private Gun gunFront2;
+    private Gun gunLeft;
+    private Gun gunRight;
+    private Vector2 gunPos = new Vector2();
     private Array<ShotActor> shotsActive;
     private float timeSinceLastShot = 0f;
+    private float timeSinceLastShotA = 0f;
+    private ActorManager actorManager;
+    private World world;
+    private int score;
 
-    public PlayerActor(Vector2 pos, World world, int actorIndex, int collisionGroup) {
+    public PlayerActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
         texture = new Texture(Gdx.files.internal("shipOrange.png"));
-        playerWidth = 0.94f;
-        playerHeight = 0.72f;
-        moveSpeed = 5f;
+        width = 0.94f;
+        height = 0.72f;
+        moveSpeed = 10f;
         angle = 0;
         isMoving = false;
         isActive = true;
+        actorManager = Asteroidia.actorManager;
+        this.world = world;
 
-        setBounds(pos.x, pos.y, playerWidth, playerHeight);
-        createBody(world, pos, 0, 0, 0);
+        setBounds(pos.x, pos.y, width, height);
+        createBody(world, pos, angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         worldPos.set(pos);
         moveTarget.set(body.getPosition().x, body.getPosition().y, 0);
 
-        // set gun to ship's tip
-        gunAngle = angle;
-        gunX = getX() + playerWidth / 2;
-        gunY = getY() + playerHeight;
-        gun = new Gun(gunX, gunY, gunAngle);
-
+        gunsEquipped = new Array<Gun>();
         shotsActive = new Array<ShotActor>();
-    }
 
-    @Override
-    public void draw(Batch batch, float parentAlpha) {
-        batch.draw(texture, worldPos.x - playerWidth / 2, worldPos.y - playerHeight / 2, playerWidth, playerHeight);
+        // set gun to ship's tip
+        gunFront = addGun(worldPos.x + width/8, worldPos.y + height/2, angle, ShotActor.ShotType.BULLET, 0.15f);
+        //gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, Gun.ShotType.LASER, 0.15f);
+        //gunLeft = addGun(worldPos.x + width/4, worldPos.y + height, 45, Gun.ShotType.LASER, 0.15f);
+        //gunRight = addGun(worldPos.x - width/4, worldPos.y + height, 315, Gun.ShotType.LASER, 0.15f);
     }
 
     @Override
@@ -87,13 +89,18 @@ public class PlayerActor extends SpaceActor {
         super.act(delta);
         move();
         updateWorldPos();
-        shoot(delta);
+        shoot(delta, actorManager);
+    }
+
+    @Override
+    public void draw(Batch batch, float parentAlpha) {
+        batch.draw(texture, worldPos.x - width / 2, worldPos.y - height / 2, width, height);
     }
 
     @Override
     public void move() {
         // set coordinates to Vector2(s) for calculation
-        endPos.set(moveTarget.x, moveTarget.y + playerHeight);
+        endPos.set(moveTarget.x, moveTarget.y + height * 1.5f);
         startPos.set(worldPos);
 
         // calculate distance and direction between player and touch
@@ -114,64 +121,90 @@ public class PlayerActor extends SpaceActor {
         body.applyForce(moveForce, body.getWorldCenter(), true);
 
         updateWorldPos();
-
-        // ensure player movement will not leave screen
-        if(worldPos.x - playerWidth/2 < 0) worldPos.x = 0 + playerWidth/2;
-        if(worldPos.x - playerWidth/2 > Asteroidia.WIDTH - playerWidth) worldPos.x = Asteroidia.WIDTH - playerWidth/2;
-        if(worldPos.y - playerHeight/2 < 0) worldPos.y = 0 + playerHeight/2;
-        if(worldPos.y - playerHeight/2 > Asteroidia.HEIGHT - playerHeight) worldPos.y = Asteroidia.HEIGHT - playerHeight/2;
-
-        body.setTransform(worldPos, angle);
-
-        gunX = worldPos.x;
-        gunY = worldPos.y + playerHeight;
-        gun.setGunX(gunX);
-        gun.setGunY(gunY);
+        restrictToWorld();
+        updateGunPos();
     }
 
-    public void shoot(float delta) {
-        Iterator<ShotActor> iterator = shotsActive.iterator();
-        while (iterator.hasNext()) {
-            ShotActor shot = iterator.next();
-            if (shot.isActive() == false) {
-                iterator.remove();
-            }
-        }
-        timeSinceLastShot += delta;
-        if (timeSinceLastShot > 0.25f) {
-            //ShotActor shot = gun.createShot();
-            //shot.createBody(Asteroidia.world, shot.getCurrentPos());
-            //shotsActive.add(shot);
-            //getStage().addActor(shot);
-            timeSinceLastShot = 0;
+    public void shoot(float delta, ActorManager actorManager) {
+        for (Gun gun : gunsEquipped) {
+            gun.shoot(delta);
         }
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution) {
+    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
         bodyDef.angle = angle;
         body = world.createBody(bodyDef);
+        body.setUserData(actorData);
+        body.setFixedRotation(true);
 
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(.94f * 0.5f, 0.72f * 0.5f);
+        //shape.setAsBox(0.94f * 0.5f, 0.72f * 0.5f);
+        shape.setAsBox(width * 0.5f, height * 0.5f);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
+        fixtureDef.filter.categoryBits = categoryBits;
+        fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
+
         shape.dispose();
-        System.out.println("body: " + body.getPosition() + " world: " + worldPos + " player " + getX() + " " + getY());
     }
 
     @Override
     public void destroy(World world) {
-        if (isActive)
-        //killSound.play();
-        setVisible(false);
-        isMoving = false;
-        System.out.println("============DEAD=============");
+        if (isActive) {
+            isActive = false;
+            world.destroyBody(body);
+            isMoving = false;
+            System.out.println("============DEAD=============");
+            remove();
+        }
+    }
+
+    public Gun addGun(float gunX, float gunY, float angle, ShotActor.ShotType shotType, float fireRate) {
+        Gun gun = new Gun(angle, gunX, gunY, shotType, fireRate);
+        gunsEquipped.add(gun);
+        return gun;
+    }
+
+    public void updateGunPos() {
+        if (gunsEquipped.contains(gunFront, true) && gunsEquipped.contains(gunFront2, true)) {
+            gunFront.setGunX(worldPos.x + width / 8f);
+            gunFront.setGunY(worldPos.y + height / 2f);
+        }
+        else if (gunsEquipped.contains(gunFront, true)) {
+            gunFront.setGunX(worldPos.x);
+            gunFront.setGunY(worldPos.y + height / 2f);
+        }
+        if (gunsEquipped.contains(gunFront2, true)) {
+            gunFront2.setGunX(worldPos.x - width / 8f);
+            gunFront2.setGunY(worldPos.y + height / 2f);
+        }
+        if (gunsEquipped.contains(gunLeft, true)) {
+            gunLeft.setGunX(worldPos.x - width / 4f);
+            gunLeft.setGunY(worldPos.y);
+        }
+        if (gunsEquipped.contains(gunRight, true)) {
+            gunRight.setGunX(worldPos.x + width / 4f);
+            gunRight.setGunY(worldPos.y);
+        }
+
+    }
+
+    public void doubleGuns() {
+        // power up both guns
+        if (gunsEquipped.contains(gunFront, true) && gunsEquipped.contains(gunFront2, true)) {
+            gunFront.setShotType(ShotActor.ShotType.LASER);
+            gunFront2.setShotType(ShotActor.ShotType.LASER);
+        }
+        // add second front gun
+        else if (gunsEquipped.contains(gunFront, true)) {
+            gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, ShotActor.ShotType.BULLET, 0.15f);
+        }
     }
 
     @Override
@@ -179,12 +212,37 @@ public class PlayerActor extends SpaceActor {
         worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
-    /*
-     Getters and Setters
-    */
+    public void restrictToWorld() {
+        // ensure player movement will not leave screen
+        if(worldPos.x  < 0) {
+            worldPos.x = 0;
+            body.setTransform(worldPos, angle);
+        }
+        if(worldPos.x > Asteroidia.WIDTH) {
+            worldPos.x = Asteroidia.WIDTH;
+            body.setTransform(worldPos, angle);
+        }
+        if(worldPos.y - height /2 < 0) {
+            worldPos.y = 0 + height /2;
+            body.setTransform(worldPos, angle);
+        }
+        if(worldPos.y - height /2 > Asteroidia.HEIGHT - height) {
+            worldPos.y = Asteroidia.HEIGHT - height /2;
+            body.setTransform(worldPos, angle);
+        }
+    }
 
-    public float getPlayerWidth() {
-        return playerWidth;
+    /*/////////////////
+    Getters and Setters
+    *//////////////////
+
+    public void setIndex(int newIndex){
+        actorData.setInfo(newIndex, actorData.getCollisionGroup());
+        body.setUserData(actorData);
+    }
+
+    public float getWidth() {
+        return width;
     }
 
     public Body getBody() {
@@ -247,8 +305,8 @@ public class PlayerActor extends SpaceActor {
         return isMoving;
     }
 
-    public Gun getGun() {
-        return gun;
+    public Gun getGunFront() {
+        return gunFront;
     }
 
     public Array<ShotActor> getShotsActive() {
@@ -269,5 +327,35 @@ public class PlayerActor extends SpaceActor {
 
     public void setMoveDistance(float moveDistance) {
         this.moveDistance = moveDistance;
+    }
+
+    public ActorManager getActorManager() {
+        return actorManager;
+    }
+
+    public void setActorManager(ActorManager actorManager) {
+        this.actorManager = actorManager;
+    }
+
+    @Override
+    public boolean isActive() {
+        return isActive;
+    }
+
+    @Override
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public Array<Gun> getGunsEquipped() {
+        return gunsEquipped;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 }
