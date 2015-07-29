@@ -43,6 +43,7 @@ public class PlayerActor extends SpaceActor {
     private Vector2 moveForce = new Vector2();
     private float moveDistance;
     private float delta;
+    private ShieldActor shield;
     private Array<Gun> gunsEquipped;
     private Gun gunFront;
     private Gun gunFront2;
@@ -205,6 +206,13 @@ public class PlayerActor extends SpaceActor {
         else if (gunsEquipped.contains(gunFront, true)) {
             gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, ShotActor.ShotType.BULLET, 0.15f);
         }
+    }
+
+    public ShieldActor addShield(Vector2 pos, ) {
+        shield = new ShieldActor(pos, world, );
+        new ShieldActor()
+
+        return shield;
     }
 
     @Override
