@@ -38,7 +38,7 @@ public class Gun {
         lastShotTime += delta;
 
         if (lastShotTime > fireRate) {
-            ShotActor shot = Asteroidia.actorManager.addShotActor(gunPos, ActorType.SHOT, CollisionGroup.PLAYER_SHOT, gunAngle, shotType);
+            ShotActor shot = Asteroidia.actorManager.addShotActor(gunPos, ActorType.SHOT, CollisionGroup.PLAYER_SHOT, gunAngle, this.shotType);
             lastShotTime = 0f;
             shotsActive.add(shot);
             laserSound.play();

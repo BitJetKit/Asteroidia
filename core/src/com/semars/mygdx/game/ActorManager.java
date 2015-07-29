@@ -18,6 +18,7 @@ import com.semars.mygdx.game.elements.CollisionGroup;
 import com.semars.mygdx.game.elements.Gun;
 import com.semars.mygdx.game.elements.PlayerActor;
 import com.semars.mygdx.game.elements.PowerupActor;
+import com.semars.mygdx.game.elements.ShieldActor;
 import com.semars.mygdx.game.elements.ShotActor;
 import com.semars.mygdx.game.elements.SpaceActor;
 
@@ -98,7 +99,12 @@ public class ActorManager implements ContactListener {
         stage.addActor(shotActor);
         return shotActor;
     }
-
+    public ShieldActor addShieldActor(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, SpaceActor shieldTarget) {
+        ShieldActor shieldActor = new ShieldActor(pos, world, actors.size(), collisionGroup, shieldTarget);
+        actors.add(shieldActor);
+        stage.addActor(shieldActor);
+        return shieldActor;
+    }
     public PowerupActor addPowerupActor(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, PowerupActor.PowerupType powerupType) {
         PowerupActor powerupActor = new PowerupActor(pos, world, actors.size(), collisionGroup, powerupType);
         actors.add(powerupActor);
@@ -134,6 +140,14 @@ public class ActorManager implements ContactListener {
             System.out.println(dataB.getActorIndex() + ", " + dataB.getCollisionGroup() + " hit " + dataA.getActorIndex() + ", " + dataA.getCollisionGroup());
             handleCollisionPlayer_ShotAndEnemy(dataB, dataA);
         }
+        if (dataA.getCollisionGroup() == CollisionGroup.SHIELD && dataB.getCollisionGroup() == CollisionGroup.ENEMY) {
+            System.out.println(dataA.getActorIndex() + ", " + dataA.getCollisionGroup() + " hit " + dataB.getActorIndex() + ", " + dataB.getCollisionGroup());
+            handleCollisionShieldAndEnemy(dataA, dataB);
+        }
+        if (dataA.getCollisionGroup() == CollisionGroup.ENEMY && dataB.getCollisionGroup() == CollisionGroup.SHIELD) {
+            System.out.println(dataB.getActorIndex() + ", " + dataB.getCollisionGroup() + " hit " + dataA.getActorIndex() + ", " + dataA.getCollisionGroup());
+            handleCollisionShieldAndEnemy(dataB, dataA);
+        }
         if (dataA.getCollisionGroup() == CollisionGroup.PLAYER && dataB.getCollisionGroup() == CollisionGroup.POWERUP) {
             System.out.println(dataA.getActorIndex() + ", " + dataA.getCollisionGroup() + " hit " + dataB.getActorIndex() + ", " + dataB.getCollisionGroup());
             handleCollisionPlayerAndPowerup(dataA, dataB);
@@ -167,13 +181,21 @@ public class ActorManager implements ContactListener {
             System.out.println("Score: " + score);
         }
     }
+    void handleCollisionShieldAndEnemy(ActorData dataPlayer_Shield, ActorData dataEnemy) {
+        System.out.println(dataPlayer_Shield.getActorIndex() + ", Shield" + " and " + dataEnemy.getActorIndex() + ", Asteroid");
+        ShieldActor shieldActor = (ShieldActor) actors.get(dataPlayer_Shield.getActorIndex());
+        AsteroidActor asteroidActor = (AsteroidActor) actors.get(dataEnemy.getActorIndex());
+        if (shieldActor.isActive() && asteroidActor.isActive()) {
+            deleteActor(shieldActor);
+        }
+    }
     void handleCollisionPlayerAndPowerup(ActorData dataPlayer, ActorData dataPowerup) {
         System.out.println(dataPlayer.getActorIndex() + ", Player" + " and " + dataPowerup.getActorIndex() + ", Powerup");
         PlayerActor playerActor = (PlayerActor) actors.get(dataPlayer.getActorIndex());
         PowerupActor powerupActor = (PowerupActor) actors.get(dataPowerup.getActorIndex());
         if (playerActor.isActive() && powerupActor.isActive()) {
-            deleteActor(powerupActor);
             powerupActor.giveEffect(playerActor, powerupActor.getPowerupType());
+            deleteActor(powerupActor);
         }
     }
 

@@ -12,12 +12,11 @@ import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
-import com.semars.mygdx.game.Asteroidia;
 
 /**
- * Created by semar on 7/24/15.
+ * Created by semar on 7/29/15.
  */
-public class PowerupActor extends SpaceActor {
+public class ShieldActor extends SpaceActor {
     private Body body;
     private Fixture fixture;
     private Texture texture;
@@ -26,59 +25,33 @@ public class PowerupActor extends SpaceActor {
     private float height;
     private float radius;
     private float angle;
-    private float rotationSpeed;
+    private float moveSpeed;
     private Vector2 worldPos = new Vector2();
+    private Vector2 moveTarget = new Vector2();
+    private Vector2 moveDirection = new Vector2();
+    private Vector2 moveVelocity = new Vector2();
+    private Vector2 moveAmount = new Vector2();
+    private Vector2 moveForce = new Vector2();
+    private SpaceActor shieldTarget;
     private boolean isMoving;
     private boolean isActive;
-    private Sound killSound;
-    private PowerupType powerupType;
+    private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
 
-    public PowerupActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, PowerupType powerupType) {
+    public ShieldActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, SpaceActor shieldTarget) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
-        this.powerupType = powerupType;
-        switch (this.powerupType) {
-            case STAR: {
-                texture = new Texture(Gdx.files.internal("powerupYellow_star.png"));
-                width = 0.75f;
-                height = 0.75f;
-                break;
-            }
-            case SHIELD: {
-                texture = new Texture(Gdx.files.internal("powerupBlue_shield.png"));
-                width = 0.75f;
-                height = 0.75f;
-                break;
-            }
-            case BOLT: {
-                texture = new Texture(Gdx.files.internal("powerupRed_bolt.png"));
-                width = 0.75f;
-                height = 0.75f;
-                break;
-            }
-            case BOMB: {
-                texture = new Texture(Gdx.files.internal("pill_green.png"));
-                width = 0.30f;
-                height = 0.30f;
-                break;
-            }
-        }
+        texture = new Texture(Gdx.files.internal("shield3.png"));
+        width = 1.14f;
+        height = 1.08f;
         angle = 0;
-        rotationSpeed = 0;
-        this.radius = width / 2;
+        radius = width / 2f;
         setBounds(pos.x, pos.y, width, height);
         worldPos.set(pos.x, pos.y);
         isMoving = false;
+        setVisible(false);
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         setIsActive(true);
-        killSound = Gdx.audio.newSound(Gdx.files.internal("sfx_shieldUp.ogg"));
-    }
-
-    public enum PowerupType {
-        STAR,
-        SHIELD,
-        BOLT,
-        BOMB
+        this.shieldTarget = shieldTarget;
     }
 
     @Override
@@ -87,16 +60,14 @@ public class PowerupActor extends SpaceActor {
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
         bodyDef.angle = angle;
-        bodyDef.fixedRotation = true;
         body = world.createBody(bodyDef);
         body.setUserData(actorData);
+
         CircleShape shape = new CircleShape();
         shape.setRadius(radius);
-
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
-        fixtureDef.isSensor = true;
         fixtureDef.filter.categoryBits = categoryBits;
         fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
@@ -105,56 +76,35 @@ public class PowerupActor extends SpaceActor {
 
     @Override
     public void draw (Batch batch, float parentAlpha) {
-        batch.draw(texture, worldPos.x - width / 2, worldPos.y - height / 2, width, height);
+        batch.draw(texture, worldPos.x - width / 2, worldPos.y - height / 2, this.width / 2, this.height / 2, this.width, this.height,
+                this.getScaleX(), this.getScaleY(), this.getRotation(), 0, 0, texture.getWidth(), texture.getHeight(), false, false);
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
         move();
-        //restrictToWorld();
         updateWorldPos();
+        setPosition(worldPos.x, worldPos.y);
     }
 
     @Override
     public void move() {
-
+        moveTarget.set(shieldTarget.getWorldPos());
+        body.setTransform(moveTarget, this.angle);
     }
 
     @Override
     public void destroy(World world) {
         if (isActive) {
             isActive = false;
-            isMoving = false;
             world.destroyBody(body);
             killSound.play();
+            isMoving = false;
+            System.out.println("Destroyed " + actorData.actorIndex + ", Shield");
             remove();
         }
     }
-
-    public void giveEffect(PlayerActor playerActor, PowerupType powerupType) {
-        switch (powerupType) {
-            case STAR: {
-                int playerScore = playerActor.getScore();
-                int scoreGiven = 100;
-                playerActor.setScore(playerScore += scoreGiven);
-                break;
-            }
-            case SHIELD: {
-                Asteroidia.actorManager.addShieldActor(playerActor.getWorldPos(), ActorType.SHIELD, CollisionGroup.SHIELD, playerActor);
-                break;
-            }
-            case BOLT: {
-                playerActor.doubleGuns();
-                break;
-            }
-            case BOMB: {
-
-                break;
-            }
-        }
-    }
-
     @Override
     public void updateWorldPos() {
         worldPos.set(body.getPosition().x, body.getPosition().y);
@@ -168,7 +118,6 @@ public class PowerupActor extends SpaceActor {
         actorData.setInfo(newIndex, actorData.getCollisionGroup());
         body.setUserData(actorData);
     }
-
     @Override
     public ActorData getActorData() {
         return actorData;
@@ -190,9 +139,5 @@ public class PowerupActor extends SpaceActor {
     @Override
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
-    }
-
-    public PowerupType getPowerupType() {
-        return powerupType;
     }
 }

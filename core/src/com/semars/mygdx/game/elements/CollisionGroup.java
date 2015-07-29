@@ -5,9 +5,10 @@ package com.semars.mygdx.game.elements;
  */
 public enum CollisionGroup {
     PLAYER((short) 0x0002, (short) (0x0004 | 0x0010)),
-    ENEMY((short) 0x0004, (short) (0x0002 | 0x0008)),
+    ENEMY((short) 0x0004, (short) (0x0002 | 0x0008 | 0x0012)),
     PLAYER_SHOT((short) 0x0008, (short) (0x0004)),
-    POWERUP((short) 0x0010, (short) (0x0002));
+    POWERUP((short) 0x0010, (short) (0x0002)),
+    SHIELD((short) 0x0012, (short) (0x0004));
 
     private short categoryBits;
     private short maskBits;

@@ -55,7 +55,6 @@ public class ShotActor extends SpaceActor {
                 break;
             }
         }
-        this.angle = angle;
         moveSpeed = 0.05f;
         lifeTime = 0;
         this.world = world;

@@ -47,6 +47,7 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
         this.asteroidType = asteroidType;
+        moveSpeed = 0.03f;
         switch (asteroidType) {
             case SMALL: {
                 texture = new Texture(Gdx.files.internal("asteroidSmall1.png"));
@@ -68,19 +69,17 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
                 width = 1.80f;
                 height = 1.66f;
                 scoreGiven = 50;
-                moveSpeed = moveSpeed /1000f;
+                moveSpeed = moveSpeed / 10f;
                 break;
             }
         }
         angle = 0;
-        moveSpeed = 0.03f;
         rotationSpeed = 0.5f;
         radius = width / 2f;
         setBounds(pos.x, pos.y, width, height);
         worldPos.set(pos.x, pos.y);
         isMoving = false;
         setVisible(false);
-        System.out.println("catBits: " + collisionGroup.getCategoryBits() + ", mask: " + collisionGroup.getMaskBits());
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         setIsActive(true);
     }
@@ -153,9 +152,9 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     public void destroy(World world) {
         if (isActive) {
             isActive = false;
+            isMoving = false;
             world.destroyBody(body);
             killSound.play();
-            isMoving = false;
             System.out.println("Destroyed " + actorData.actorIndex + ", Asteroid");
             remove();
         }

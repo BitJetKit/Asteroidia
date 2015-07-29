@@ -48,7 +48,6 @@ public abstract class SpaceActor extends Actor {
 
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(0, 0);
-        System.out.println("SpaceActor. w: " + getWidth() + " h: " + getHeight());
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = density;
@@ -120,5 +119,9 @@ public abstract class SpaceActor extends Actor {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Vector2 getWorldPos() {
+        return worldPos;
     }
 }
