@@ -40,39 +40,41 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     private boolean isMoving;
     private boolean isActive;
     private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
-    private AsteroidType asteroidType;
+    private ActorType actorType;
+    private float damageGiven;
     private int scoreGiven;
 
-    public AsteroidActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, AsteroidType asteroidType) {
+    public AsteroidActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
-        this.asteroidType = asteroidType;
+        this.actorType = actorType;
         moveSpeed = 0.03f;
-        switch (asteroidType) {
-            case SMALL: {
+        switch (this.actorType) {
+            case ENEMY_ASTEROID_SMALL: {
                 texture = new Texture(Gdx.files.internal("asteroidSmall1.png"));
                 width = 0.28f;
                 height = 0.28f;
                 scoreGiven = 10;
-                moveSpeed = moveSpeed * 4f;
+                moveSpeed = moveSpeed * 1.5f;
                 break;
             }
-            case MEDIUM: {
+            case ENEMY_ASTEROID_MEDIUM: {
                 texture = new Texture(Gdx.files.internal("asteroidMed1.png"));
                 width = 0.84f;
                 height = 0.84f;
                 scoreGiven = 25;
                 break;
             }
-            case LARGE: {
+            case ENEMY_ASTEROID_LARGE: {
                 texture = new Texture(Gdx.files.internal("asteroidLarge3.png"));
                 width = 1.80f;
                 height = 1.66f;
                 scoreGiven = 50;
-                moveSpeed = moveSpeed / 10f;
+                moveSpeed = moveSpeed / 1.5f;
                 break;
             }
         }
+        damageGiven = 5f;
         angle = 0;
         rotationSpeed = 0.5f;
         radius = width / 2f;
@@ -82,12 +84,6 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         setVisible(false);
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         setIsActive(true);
-    }
-
-    public enum AsteroidType {
-        SMALL,
-        MEDIUM,
-        LARGE
     }
 
     @Override
@@ -127,12 +123,10 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         setRotation(body.getAngle() * MathUtils.radiansToDegrees);
     }
 
-    public void prepareMove() {
-        float moveDirectionX = MathUtils.random(Asteroidia.WIDTH);
-        float moveDirectionY = MathUtils.random(Asteroidia.HEIGHT);
+    public void prepareMove(float moveDirectionX, float moveDirectionY, float moveSpeed) {
         moveDirection.set(moveDirectionX - getX(), moveDirectionY - getY()).nor();
         moveVelocity.set(moveDirection.scl(moveSpeed));
-        moveForce.set(moveVelocity.scl(Asteroidia.STEP * body.getMass()));
+        moveForce.set(moveVelocity.scl(Asteroidia.STEP));
     }
 
     @Override
@@ -143,7 +137,9 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
             body.setAngularVelocity(rotationSpeed);
         }
         else {
-            prepareMove();
+            float moveDirectionX = MathUtils.random(Asteroidia.WIDTH);
+            float moveDirectionY = MathUtils.random(Asteroidia.HEIGHT);
+            prepareMove(moveDirectionX, moveDirectionY, moveSpeed);
             isMoving = true;
         }
     }
@@ -212,9 +208,6 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
                 break;
             }
         }
-        if (worldPos.dst(Asteroidia.actorManager.getPlayerActor().getWorldPos()) < 10f) {
-            randomizePosOutside();
-        }
         body.setTransform(worldPos, angle);
     }
 
@@ -229,6 +222,18 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
 
     public int getScoreGiven() {
         return scoreGiven;
+    }
+
+    public float getDamageGiven() {
+        return damageGiven;
+    }
+
+    public Body getBody() {
+        return body;
+    }
+
+    public float getMoveSpeed() {
+        return moveSpeed;
     }
 
     @Override
@@ -254,7 +259,7 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         this.isActive = isActive;
     }
 
-    public AsteroidType getAsteroidType() {
-        return asteroidType;
+    public ActorType getActorType() {
+        return actorType;
     }
 }

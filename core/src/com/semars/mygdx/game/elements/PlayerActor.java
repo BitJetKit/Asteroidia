@@ -79,7 +79,7 @@ public class PlayerActor extends SpaceActor {
         shotsActive = new Array<ShotActor>();
 
         // set gun to ship's tip
-        gunFront = addGun(worldPos.x + width/8, worldPos.y + height/2, angle, ShotActor.ShotType.BULLET, 0.15f);
+        gunFront = addGun(worldPos.x + width/8, worldPos.y + height/2, angle, ActorType.PLAYER_SHOT_BULLET, 0.15f);
         //gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, Gun.ShotType.LASER, 0.15f);
         //gunLeft = addGun(worldPos.x + width/4, worldPos.y + height, 45, Gun.ShotType.LASER, 0.15f);
         //gunRight = addGun(worldPos.x - width/4, worldPos.y + height, 315, Gun.ShotType.LASER, 0.15f);
@@ -143,7 +143,6 @@ public class PlayerActor extends SpaceActor {
         body.setFixedRotation(true);
 
         PolygonShape shape = new PolygonShape();
-        //shape.setAsBox(0.94f * 0.5f, 0.72f * 0.5f);
         shape.setAsBox(width * 0.5f, height * 0.5f);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
@@ -159,15 +158,19 @@ public class PlayerActor extends SpaceActor {
     public void destroy(World world) {
         if (isActive) {
             isActive = false;
-            world.destroyBody(body);
             isMoving = false;
+            world.destroyBody(body);
+            shield.destroy(world);
             System.out.println("============DEAD=============");
             remove();
         }
     }
 
-    public Gun addGun(float gunX, float gunY, float angle, ShotActor.ShotType shotType, float fireRate) {
-        Gun gun = new Gun(angle, gunX, gunY, shotType, fireRate);
+    public Gun addGun(float gunX, float gunY, float angle, ActorType shotType, float fireRate) {
+        Gun gun = new Gun(angle, gunX, gunY, fireRate, shotType);
+        if(gunsEquipped.size > 0) {
+            gun.setLastShotTime(gunsEquipped.get(0).getLastShotTime());
+        }
         gunsEquipped.add(gun);
         return gun;
     }
@@ -199,20 +202,13 @@ public class PlayerActor extends SpaceActor {
     public void doubleGuns() {
         // power up both guns
         if (gunsEquipped.contains(gunFront, true) && gunsEquipped.contains(gunFront2, true)) {
-            gunFront.setShotType(ShotActor.ShotType.LASER);
-            gunFront2.setShotType(ShotActor.ShotType.LASER);
+            gunFront.setShotType(ActorType.PLAYER_SHOT_LASER);
+            gunFront2.setShotType(ActorType.PLAYER_SHOT_LASER);
         }
         // add second front gun
         else if (gunsEquipped.contains(gunFront, true)) {
-            gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, ShotActor.ShotType.BULLET, 0.15f);
+            gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, ActorType.PLAYER_SHOT_BULLET, 0.15f);
         }
-    }
-
-    public ShieldActor addShield(Vector2 pos, ) {
-        shield = new ShieldActor(pos, world, );
-        new ShieldActor()
-
-        return shield;
     }
 
     @Override
@@ -365,5 +361,13 @@ public class PlayerActor extends SpaceActor {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public ShieldActor getShield() {
+        return shield;
+    }
+
+    public void setShield(ShieldActor shield) {
+        this.shield = shield;
     }
 }

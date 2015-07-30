@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -12,7 +11,6 @@ import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
-import com.semars.mygdx.game.Asteroidia;
 
 /**
  * Created by semar on 7/24/15.
@@ -31,38 +29,39 @@ public class PowerupActor extends SpaceActor {
     private boolean isMoving;
     private boolean isActive;
     private Sound killSound;
-    private PowerupType powerupType;
+    private ActorType actorType;
 
-    public PowerupActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, PowerupType powerupType) {
+    public PowerupActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
-        this.powerupType = powerupType;
-        switch (this.powerupType) {
-            case STAR: {
+        this.actorType = actorType;
+        switch (this.actorType) {
+            case POWERUP_STAR: {
                 texture = new Texture(Gdx.files.internal("powerupYellow_star.png"));
                 width = 0.75f;
                 height = 0.75f;
                 break;
             }
-            case SHIELD: {
+            case PLAYER_SHIELD: {
                 texture = new Texture(Gdx.files.internal("powerupBlue_shield.png"));
                 width = 0.75f;
                 height = 0.75f;
                 break;
             }
-            case BOLT: {
+            case POWERUP_BOLT: {
                 texture = new Texture(Gdx.files.internal("powerupRed_bolt.png"));
                 width = 0.75f;
                 height = 0.75f;
                 break;
             }
-            case BOMB: {
+            case POWERUP_BOMB: {
                 texture = new Texture(Gdx.files.internal("pill_green.png"));
                 width = 0.30f;
                 height = 0.30f;
                 break;
             }
         }
+        //texture = new Texture(Gdx.files.internal("pill_green.png"));
         angle = 0;
         rotationSpeed = 0;
         this.radius = width / 2;
@@ -72,13 +71,6 @@ public class PowerupActor extends SpaceActor {
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         setIsActive(true);
         killSound = Gdx.audio.newSound(Gdx.files.internal("sfx_shieldUp.ogg"));
-    }
-
-    public enum PowerupType {
-        STAR,
-        SHIELD,
-        BOLT,
-        BOMB
     }
 
     @Override
@@ -132,23 +124,23 @@ public class PowerupActor extends SpaceActor {
         }
     }
 
-    public void giveEffect(PlayerActor playerActor, PowerupType powerupType) {
-        switch (powerupType) {
-            case STAR: {
+    public void giveEffect(PlayerActor playerActor, ActorType actorType) {
+        switch (actorType) {
+            case POWERUP_STAR: {
                 int playerScore = playerActor.getScore();
                 int scoreGiven = 100;
                 playerActor.setScore(playerScore += scoreGiven);
                 break;
             }
-            case SHIELD: {
-                Asteroidia.actorManager.addShieldActor(playerActor.getWorldPos(), ActorType.SHIELD, CollisionGroup.SHIELD, playerActor);
+            case POWERUP_SHIELD: {
+                playerActor.getShield().setHealth(100f);
                 break;
             }
-            case BOLT: {
+            case POWERUP_BOLT: {
                 playerActor.doubleGuns();
                 break;
             }
-            case BOMB: {
+            case POWERUP_BOMB: {
 
                 break;
             }
@@ -192,7 +184,7 @@ public class PowerupActor extends SpaceActor {
         this.isActive = isActive;
     }
 
-    public PowerupType getPowerupType() {
-        return powerupType;
+    public ActorType getActorType() {
+        return actorType;
     }
 }

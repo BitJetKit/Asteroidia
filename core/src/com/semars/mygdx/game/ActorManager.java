@@ -15,7 +15,6 @@ import com.semars.mygdx.game.elements.ActorData;
 import com.semars.mygdx.game.elements.ActorType;
 import com.semars.mygdx.game.elements.AsteroidActor;
 import com.semars.mygdx.game.elements.CollisionGroup;
-import com.semars.mygdx.game.elements.Gun;
 import com.semars.mygdx.game.elements.PlayerActor;
 import com.semars.mygdx.game.elements.PowerupActor;
 import com.semars.mygdx.game.elements.ShieldActor;
@@ -80,11 +79,12 @@ public class ActorManager implements ContactListener {
         playerActor = new PlayerActor(pos, world, actors.size(), collisionGroup);
         actors.add(playerActor);
         stage.addActor(playerActor);
+        playerActor.setShield(addShieldActor(playerActor.getWorldPos(), CollisionGroup.SHIELD, playerActor, ActorType.PLAYER_SHIELD));
         return playerActor;
     }
 
-    public AsteroidActor addAsteroidActor(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, float angle, AsteroidActor.AsteroidType asteroidType) {
-        AsteroidActor asteroidActor = new AsteroidActor(pos, world, actors.size(), collisionGroup, asteroidType);
+    public AsteroidActor addAsteroidActor(Vector2 pos, CollisionGroup collisionGroup, float angle, ActorType actorType) {
+        AsteroidActor asteroidActor = new AsteroidActor(pos, world, actors.size(), collisionGroup, actorType);
         actors.add(asteroidActor);
         stage.addActor(asteroidActor);
         asteroidActor.randomizePosOutside();
@@ -93,20 +93,20 @@ public class ActorManager implements ContactListener {
         return asteroidActor;
     }
 
-    public ShotActor addShotActor(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, float angle, ShotActor.ShotType shotType) {
-        ShotActor shotActor = new ShotActor(pos, world, actors.size(), collisionGroup, shotType);
+    public ShotActor addShotActor(Vector2 pos, CollisionGroup collisionGroup, float angle, ActorType actorType) {
+        ShotActor shotActor = new ShotActor(pos, world, actors.size(), collisionGroup, actorType);
         actors.add(shotActor);
         stage.addActor(shotActor);
         return shotActor;
     }
-    public ShieldActor addShieldActor(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, SpaceActor shieldTarget) {
+    public ShieldActor addShieldActor(Vector2 pos, CollisionGroup collisionGroup, SpaceActor shieldTarget, ActorType actorType) {
         ShieldActor shieldActor = new ShieldActor(pos, world, actors.size(), collisionGroup, shieldTarget);
         actors.add(shieldActor);
         stage.addActor(shieldActor);
         return shieldActor;
     }
-    public PowerupActor addPowerupActor(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, PowerupActor.PowerupType powerupType) {
-        PowerupActor powerupActor = new PowerupActor(pos, world, actors.size(), collisionGroup, powerupType);
+    public PowerupActor addPowerupActor(Vector2 pos, CollisionGroup collisionGroup, ActorType actorType) {
+        PowerupActor powerupActor = new PowerupActor(pos, world, actors.size(), collisionGroup, actorType);
         actors.add(powerupActor);
         stage.addActor(powerupActor);
         return powerupActor;
@@ -131,7 +131,6 @@ public class ActorManager implements ContactListener {
             System.out.println(dataB.getActorIndex() + ", " + dataB.getCollisionGroup() + " hit " + dataA.getActorIndex() + ", " + dataA.getCollisionGroup());
             handleCollisionPlayerAndEnemy(dataB, dataA);
         }
-
         if (dataA.getCollisionGroup() == CollisionGroup.PLAYER_SHOT && dataB.getCollisionGroup() == CollisionGroup.ENEMY) {
             System.out.println(dataA.getActorIndex() + ", " + dataA.getCollisionGroup() + " hit " + dataB.getActorIndex() + ", " + dataB.getCollisionGroup());
             handleCollisionPlayer_ShotAndEnemy(dataA, dataB);
@@ -186,7 +185,9 @@ public class ActorManager implements ContactListener {
         ShieldActor shieldActor = (ShieldActor) actors.get(dataPlayer_Shield.getActorIndex());
         AsteroidActor asteroidActor = (AsteroidActor) actors.get(dataEnemy.getActorIndex());
         if (shieldActor.isActive() && asteroidActor.isActive()) {
-            deleteActor(shieldActor);
+            shieldActor.setHealth(shieldActor.getHealth() - asteroidActor.getDamageGiven());
+            asteroidActor.prepareMove(asteroidActor.getX() * -1, asteroidActor.getY() * -1, asteroidActor.getMoveSpeed());
+            asteroidActor.getBody().applyForceToCenter(new Vector2(asteroidActor.getX() * -1, asteroidActor.getY() * -1), true);
         }
     }
     void handleCollisionPlayerAndPowerup(ActorData dataPlayer, ActorData dataPowerup) {
@@ -194,7 +195,7 @@ public class ActorManager implements ContactListener {
         PlayerActor playerActor = (PlayerActor) actors.get(dataPlayer.getActorIndex());
         PowerupActor powerupActor = (PowerupActor) actors.get(dataPowerup.getActorIndex());
         if (playerActor.isActive() && powerupActor.isActive()) {
-            powerupActor.giveEffect(playerActor, powerupActor.getPowerupType());
+            powerupActor.giveEffect(playerActor, powerupActor.getActorType());
             deleteActor(powerupActor);
         }
     }

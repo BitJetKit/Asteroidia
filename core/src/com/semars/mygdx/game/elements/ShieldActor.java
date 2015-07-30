@@ -36,13 +36,14 @@ public class ShieldActor extends SpaceActor {
     private boolean isMoving;
     private boolean isActive;
     private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
+    private float health;
 
     public ShieldActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, SpaceActor shieldTarget) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
         texture = new Texture(Gdx.files.internal("shield3.png"));
-        width = 1.14f;
-        height = 1.08f;
+        width = 1.60f;
+        height = 1.52f;
         angle = 0;
         radius = width / 2f;
         setBounds(pos.x, pos.y, width, height);
@@ -52,6 +53,7 @@ public class ShieldActor extends SpaceActor {
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         setIsActive(true);
         this.shieldTarget = shieldTarget;
+        health = 100f;
     }
 
     @Override
@@ -86,6 +88,11 @@ public class ShieldActor extends SpaceActor {
         move();
         updateWorldPos();
         setPosition(worldPos.x, worldPos.y);
+        if (health <= 0) {
+            setVisible(false);
+            setIsActive(false);
+            body.setActive(false);
+        }
     }
 
     @Override
@@ -98,9 +105,9 @@ public class ShieldActor extends SpaceActor {
     public void destroy(World world) {
         if (isActive) {
             isActive = false;
+            isMoving = false;
             world.destroyBody(body);
             killSound.play();
-            isMoving = false;
             System.out.println("Destroyed " + actorData.actorIndex + ", Shield");
             remove();
         }
@@ -139,5 +146,13 @@ public class ShieldActor extends SpaceActor {
     @Override
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
     }
 }

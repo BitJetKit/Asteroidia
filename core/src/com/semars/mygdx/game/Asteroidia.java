@@ -87,10 +87,10 @@ public class Asteroidia extends Game implements ApplicationListener {
 		bgTexture = new Texture(Gdx.files.internal("background.png"));
 		bgSprite = new Sprite(bgTexture);
 
-		spawnObject(new Vector2(WIDTH / 2f, HEIGHT / 8), ActorType.PLAYER, CollisionGroup.PLAYER, 0, null, null, null, null);
-		spawnObject(new Vector2(WIDTH / 8, HEIGHT / 2), ActorType.POWERUP, CollisionGroup.POWERUP, 0, null, PowerupActor.PowerupType.SHIELD, null, null);
-		spawnObject(new Vector2(WIDTH / 3, HEIGHT / 2), ActorType.POWERUP, CollisionGroup.POWERUP, 0, null, PowerupActor.PowerupType.BOLT, null, null);
-		spawnObject(new Vector2(WIDTH / 10, HEIGHT / 3), ActorType.POWERUP, CollisionGroup.POWERUP, 0, null, PowerupActor.PowerupType.BOLT, null, null);
+		player = actorManager.addPlayerActor(new Vector2(WIDTH / 2f, HEIGHT / 8), ActorType.PLAYER, CollisionGroup.PLAYER, 0);
+		actorManager.addPowerupActor(new Vector2(WIDTH / 8f, HEIGHT / 2f), CollisionGroup.POWERUP, ActorType.POWERUP_SHIELD);
+		//actorManager.addPowerupActor(new Vector2(WIDTH / 3, HEIGHT / 2), CollisionGroup.POWERUP, ActorType.POWERUP_BOLT);
+		//actorManager.addPowerupActor(new Vector2(WIDTH / 10, HEIGHT / 2), CollisionGroup.POWERUP, ActorType.POWERUP_BOLT);
 
 		enemyActorArray = new Array<EnemyActor>();
 		asteroidActorArray = actorManager.getAsteroidActorArray();
@@ -105,11 +105,8 @@ public class Asteroidia extends Game implements ApplicationListener {
 		Gdx.gl.glClearColor(0, 0, 0.2f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		camera.update();
-		//debugRenderer.render(world, camera.combined);
+		debugRenderer.render(world, camera.combined);
 		batch.setProjectionMatrix(camera.combined);
-		/*batch.begin();
-		bgSprite.draw(batch);
-		batch.end();*/
 		stage.draw();
 
 		gameTime += delta;
@@ -172,48 +169,21 @@ public class Asteroidia extends Game implements ApplicationListener {
 		}
 	}
 
-	public void spawnObject(Vector2 pos, ActorType actorType, CollisionGroup collisionGroup, float angle, AsteroidActor.AsteroidType asteroidType, PowerupActor.PowerupType powerupType, ShotActor.ShotType shotType, SpaceActor shieldTarget) {
-		AsteroidActor asteroidActor;
-		ShotActor shotActor;
-		PowerupActor powerupActor;
-		ShieldActor shieldActor;
-		switch (actorType) {
-			case PLAYER: {
-				player = actorManager.addPlayerActor(pos, actorType, collisionGroup, angle);
-				break;
-			}
-			case ASTEROID: {
-				asteroidActor = actorManager.addAsteroidActor(pos, actorType, collisionGroup, angle, asteroidType);
-				break;
-			}
-			case SHOT: {
-				shotActor = actorManager.addShotActor(pos, actorType, collisionGroup, angle, shotType);
-				break;
-			}
-			case POWERUP: {
-				powerupActor = actorManager.addPowerupActor(pos, actorType, collisionGroup, powerupType);
-				break;
-			}
-			case SHIELD: {
-				shieldActor = actorManager.addShieldActor(pos, actorType, collisionGroup, shieldTarget);
-			}
-		}
-	}
-
 	public void createAsteroids(int asteroids) {
-		AsteroidActor.AsteroidType asteroidType = null;
+		ActorType asteroidType = null;
 		for (int i=0; i<asteroids; i++) {
 			int range = MathUtils.random(10);
 			if (range < 3) {
-				asteroidType = AsteroidActor.AsteroidType.SMALL;
+				asteroidType = ActorType.ENEMY_ASTEROID_SMALL;
+
 			}
 			else if (range < 7) {
-				asteroidType = AsteroidActor.AsteroidType.MEDIUM;
+				asteroidType = ActorType.ENEMY_ASTEROID_MEDIUM;
 			}
 			else {
-				asteroidType = AsteroidActor.AsteroidType.LARGE;
+				asteroidType = ActorType.ENEMY_ASTEROID_LARGE;
 			}
-			spawnObject(new Vector2(WIDTH/2, HEIGHT/2), ActorType.ASTEROID, CollisionGroup.ENEMY, 0, asteroidType, null, null, null);
+			actorManager.addAsteroidActor(new Vector2(WIDTH / 2, HEIGHT / 2), CollisionGroup.ENEMY, 0, asteroidType);
 		}
 
 	}

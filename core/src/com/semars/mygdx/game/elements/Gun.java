@@ -15,13 +15,13 @@ public class Gun {
     private Vector2 gunPos = new Vector2();
     private float gunX;
     private float gunY;
-    private ShotActor.ShotType shotType;
+    private ActorType shotType;
     private float fireRate;
     private float lastShotTime;
     private Array <ShotActor> shotsActive;
     private Sound laserSound;
 
-    public Gun(float angle, float x, float y, ShotActor.ShotType shotType, float fireRate) {
+    public Gun(float angle, float x, float y, float fireRate, ActorType shotType) {
         gunAngle = angle;
         gunX = x;
         gunY = y;
@@ -38,7 +38,7 @@ public class Gun {
         lastShotTime += delta;
 
         if (lastShotTime > fireRate) {
-            ShotActor shot = Asteroidia.actorManager.addShotActor(gunPos, ActorType.SHOT, CollisionGroup.PLAYER_SHOT, gunAngle, this.shotType);
+            ShotActor shot = Asteroidia.actorManager.addShotActor(gunPos, CollisionGroup.PLAYER_SHOT, gunAngle, this.shotType);
             lastShotTime = 0f;
             shotsActive.add(shot);
             laserSound.play();
@@ -63,7 +63,7 @@ public class Gun {
         this.gunPos = gunPos;
     }
 
-    public void setShotType(ShotActor.ShotType shotType) {
+    public void setShotType(ActorType shotType) {
         this.shotType = shotType;
     }
 
@@ -75,7 +75,15 @@ public class Gun {
         this.gunY = gunY;
     }
 
-    public ShotActor.ShotType getShotType() {
+    public ActorType getShotType() {
         return shotType;
+    }
+
+    public float getLastShotTime() {
+        return lastShotTime;
+    }
+
+    public void setLastShotTime(float lastShotTime) {
+        this.lastShotTime = lastShotTime;
     }
 }

@@ -33,21 +33,21 @@ public class ShotActor extends SpaceActor {
     private float damage;
     private boolean isActive;
     private World world;
-    private ShotType shotType;
+    private ActorType actorType;
 
-    public ShotActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ShotType shotType) {
+    public ShotActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
-        this.shotType = shotType;
-        switch (this.shotType) {
-            case BULLET: {
+        this.actorType = actorType;
+        switch (this.actorType) {
+            case PLAYER_SHOT_BULLET: {
                 texture = new Texture(Gdx.files.internal("bulletBlue.png"));
                 width = 0.08f;
                 height = 0.12f;
                 damage = 1f;
                 break;
             }
-            case LASER: {
+            case PLAYER_SHOT_LASER: {
                 texture = new Texture(Gdx.files.internal("shotBlue2.png"));
                 width = 0.10f;
                 height = 0.28f;
@@ -63,10 +63,6 @@ public class ShotActor extends SpaceActor {
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         worldPos.set(pos);
         isActive = true;
-    }
-
-    public enum ShotType {
-        BULLET, LASER
     }
 
     @Override
