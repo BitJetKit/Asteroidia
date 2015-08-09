@@ -20,7 +20,7 @@ import com.semars.mygdx.game.Asteroidia;
 /**
  * Created by semar on 7/9/15.
  */
-public class AsteroidActor extends SpaceActor implements Wrappable {
+public class AsteroidActor extends EnemyActor implements Wrappable {
 
     private Body body;
     private Fixture fixture;
@@ -39,13 +39,14 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
     private Vector2 moveForce = new Vector2();
     private boolean isMoving;
     private boolean isActive;
-    private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
+    private Sound killSound;
     private ActorType actorType;
     private float damageGiven;
     private int scoreGiven;
+    private float health;
 
     public AsteroidActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
-        super(pos, world, actorIndex, collisionGroup);
+        super(pos, world, actorIndex, collisionGroup, actorType);
         actorData = new ActorData(actorIndex, collisionGroup);
         this.actorType = actorType;
         moveSpeed = 0.03f;
@@ -55,7 +56,9 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
                 width = 0.28f;
                 height = 0.28f;
                 scoreGiven = 10;
-                moveSpeed = moveSpeed * 1.5f;
+                moveSpeed = moveSpeed * 1.2f;
+                damageGiven = 5f;
+                health = 1f;
                 break;
             }
             case ENEMY_ASTEROID_MEDIUM: {
@@ -63,6 +66,8 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
                 width = 0.84f;
                 height = 0.84f;
                 scoreGiven = 25;
+                damageGiven = 10f;
+                health = 3f;
                 break;
             }
             case ENEMY_ASTEROID_LARGE: {
@@ -71,10 +76,21 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
                 height = 1.66f;
                 scoreGiven = 50;
                 moveSpeed = moveSpeed / 1.5f;
+                damageGiven = 20f;
+                health = 10f;
+                break;
+            }
+            default: {
+                texture = new Texture(Gdx.files.internal("asteroidMed1.png"));
+                width = 0.84f;
+                height = 0.84f;
+                scoreGiven = 25;
+                damageGiven = 10f;
+                health = 3f;
                 break;
             }
         }
-        damageGiven = 5f;
+        killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
         angle = 0;
         rotationSpeed = 0.5f;
         radius = width / 2f;
@@ -82,7 +98,7 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         worldPos.set(pos.x, pos.y);
         isMoving = false;
         setVisible(false);
-        createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
+        createBody(world, pos, angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         setIsActive(true);
     }
 
@@ -181,8 +197,34 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
         worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
+    // TO-DO : make sure spawn does not occur near player
     public void randomizePosOutside() {
-        switch (MathUtils.random(2)) {
+        int spawnPos = 0;
+        // check player quadrant
+        if (Asteroidia.actorManager.getPlayerActor().getWorldPos().x < Asteroidia.WIDTH/2) {
+            // bottom left quadrant
+            if (Asteroidia.actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
+                spawnPos = 0;
+            }
+            // top right quadrant
+            else {
+                spawnPos = 2;
+            }
+        }
+        else if (Asteroidia.actorManager.getPlayerActor().getWorldPos().x > Asteroidia.WIDTH/2) {
+            // bottom right quadrant
+            if (Asteroidia.actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
+                spawnPos = 0;
+            }
+            // top left quadrant
+            else {
+                spawnPos = 1;
+            }
+        }
+        else {
+           spawnPos = MathUtils.random(2);
+        }
+        switch (spawnPos) {
             // Top
             case 0: {
                 worldPos.y = Asteroidia.HEIGHT + height;
@@ -209,6 +251,10 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
             }
         }
         body.setTransform(worldPos, angle);
+        float moveDirectionX = worldPos.x;
+        float moveDirectionY = worldPos.y;
+        prepareMove(moveDirectionX, moveDirectionY, moveSpeed);
+        System.out.println(" ASTEROID SPAWN: " + spawnPos);
     }
 
     /*/////////////////
@@ -261,5 +307,13 @@ public class AsteroidActor extends SpaceActor implements Wrappable {
 
     public ActorType getActorType() {
         return actorType;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
     }
 }

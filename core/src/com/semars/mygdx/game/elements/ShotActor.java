@@ -3,9 +3,7 @@ package com.semars.mygdx.game.elements;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -13,7 +11,6 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.utils.Pool;
 import com.semars.mygdx.game.Asteroidia;
 
 /**
@@ -30,12 +27,12 @@ public class ShotActor extends SpaceActor {
     private float angle;
     private float moveSpeed;
     private float lifeTime;
-    private float damage;
+    private float damageGiven;
     private boolean isActive;
-    private World world;
     private ActorType actorType;
+    private float health;
 
-    public ShotActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
+    public ShotActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType, float angle) {
         super(pos, world, actorIndex, collisionGroup);
         actorData = new ActorData(actorIndex, collisionGroup);
         this.actorType = actorType;
@@ -44,25 +41,39 @@ public class ShotActor extends SpaceActor {
                 texture = new Texture(Gdx.files.internal("bulletBlue.png"));
                 width = 0.08f;
                 height = 0.12f;
-                damage = 1f;
+                damageGiven = 1f;
                 break;
             }
             case PLAYER_SHOT_LASER: {
                 texture = new Texture(Gdx.files.internal("shotBlue2.png"));
                 width = 0.10f;
                 height = 0.28f;
-                damage = 2f;
+                damageGiven = 2f;
+                break;
+            }
+            case ENEMY_SHOT_BULLET: {
+                texture = new Texture(Gdx.files.internal("bulletPink.png"));
+                width = 0.08f;
+                height = 0.12f;
+                damageGiven = 50f;
+                break;
+            }
+            default: {
+                texture = new Texture(Gdx.files.internal("bulletBlue.png"));
+                width = 0.08f;
+                height = 0.12f;
+                damageGiven = 1f;
                 break;
             }
         }
         moveSpeed = 0.05f;
         lifeTime = 0;
-        this.world = world;
-
+        health = 0f;
+        this.angle = angle;
         setBounds(pos.x, pos.y, width, height);
-        createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
         worldPos.set(pos);
-        isActive = true;
+        createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
+        setIsActive(true);
     }
 
     @Override
@@ -88,7 +99,7 @@ public class ShotActor extends SpaceActor {
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        batch.draw(texture, worldPos.x, worldPos.y, width, height);
+        batch.draw(texture, worldPos.x - width / 2, worldPos.y - width / 2, width, height);
     }
 
     @Override
@@ -110,8 +121,6 @@ public class ShotActor extends SpaceActor {
         //body.applyForceToCenter(0, moveSpeed, true);
 
         //worldPos.y += Math.sin(angle) * moveSpeed * Gdx.graphics.getDeltaTime();
-
-        //setPosition(worldPos.x, worldPos.y);
     }
 
     @Override
@@ -153,15 +162,15 @@ public class ShotActor extends SpaceActor {
         boundingRectangle.setPosition(x, y);
     }*/
 
+
+    /*/////////////////
+    Getters and Setters
+    *//////////////////
+
     public void setIndex(int newIndex){
         actorData.setInfo(newIndex, actorData.getCollisionGroup());
         body.setUserData(actorData);
     }
-
-    /*/////////////////
-    Getters and Setters
-
-    *//////////////////
 
     @Override
     public ActorData getActorData() {
@@ -186,5 +195,13 @@ public class ShotActor extends SpaceActor {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public float getDamageGiven() {
+        return damageGiven;
+    }
+
+    public float getHealth() {
+        return health;
     }
 }

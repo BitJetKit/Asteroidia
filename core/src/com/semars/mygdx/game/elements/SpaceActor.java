@@ -1,5 +1,6 @@
 package com.semars.mygdx.game.elements;
 
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -20,11 +21,12 @@ public abstract class SpaceActor extends Actor {
     private Body body;
     private ActorData actorData;
     private Vector2 worldPos;
+    private Texture texture;
 
     public SpaceActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup) {
         actorData = new ActorData(actorIndex, collisionGroup);
         //worldPos = new Vector2();
-        //createBody(world, pos, 0, 1f, 1f);
+        //createBody(world, pos, 0, 1f, 1f, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
     }
 
     @Override
@@ -39,25 +41,7 @@ public abstract class SpaceActor extends Actor {
 
     public abstract void move();
 
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(pos.x, pos.y);
-        bodyDef.angle = angle;
-        body = world.createBody(bodyDef);
-
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox(0, 0);
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = shape;
-        fixtureDef.density = density;
-        fixtureDef.restitution = restitution;
-        fixtureDef.filter.categoryBits = categoryBits;
-        fixtureDef.filter.maskBits = maskBits;
-        body.createFixture(fixtureDef);
-        body.setUserData(actorData);
-        shape.dispose();
-    }
+    public abstract void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits);
 
     public void updateWorldPos(){
         worldPos.set(body.getPosition().x, body.getPosition().y);
@@ -123,5 +107,13 @@ public abstract class SpaceActor extends Actor {
 
     public Vector2 getWorldPos() {
         return worldPos;
+    }
+
+    public Body getBody() {
+        return body;
+    }
+
+    public Texture getTexture() {
+        return texture;
     }
 }

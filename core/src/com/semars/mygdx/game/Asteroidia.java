@@ -3,12 +3,15 @@ package com.semars.mygdx.game;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.BitmapFontCache;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -16,17 +19,20 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.semars.mygdx.game.elements.ActorType;
 import com.semars.mygdx.game.elements.AsteroidActor;
 import com.semars.mygdx.game.elements.CollisionGroup;
 import com.semars.mygdx.game.elements.EnemyActor;
 import com.semars.mygdx.game.elements.PlayerActor;
-import com.semars.mygdx.game.elements.PowerupActor;
-import com.semars.mygdx.game.elements.ShieldActor;
 import com.semars.mygdx.game.elements.ShotActor;
 import com.semars.mygdx.game.elements.SpaceActor;
+
+import java.text.Format;
 
 public class Asteroidia extends Game implements ApplicationListener {
 	private World world;
@@ -40,19 +46,19 @@ public class Asteroidia extends Game implements ApplicationListener {
 	private float delta;
 	private Vector2 gravity = new Vector2(0, 0);
 	private float gameTime;
-	private float gameTimeMinutes;
-	private float gameTimeSeconds;
+	private int gameTimeMinutes;
+	private int gameTimeSeconds;
 	private int score;
-	private String scoreString;
-	private BitmapFont gameFont;
+	private Label scoreLabel;
+	private Label.LabelStyle scoreLabelStyle;
+	private Label timeLabel;
 	Vector3 touchPos = new Vector3();
 	Vector3 lastTouch = new Vector3();
 	private int maxAsteroids;
-	private Array<EnemyActor> enemyActorArray;
+	private float asteroidSpawnFrequency;
+	private float timeSinceLastAsteroid;
 	private Array<AsteroidActor> asteroidActorArray;
 	private ShapeRenderer shapeRenderer;
-	private Texture bgTexture;
-	private Sprite bgSprite;
 
 	public static float WIDTH = 9.0f;
 	public static float HEIGHT = 16.0f;
@@ -78,49 +84,76 @@ public class Asteroidia extends Game implements ApplicationListener {
 		camera.setToOrtho(false, WIDTH, HEIGHT);
 		batch = new SpriteBatch();
 
-		//gameFont = new BitmapFont(Gdx.files.internal("kenvector_future_thin.tff"));
-		gameTime = 0f;
 		score = 0;
-		scoreString = "" + score;
+		gameTime = 0f;
+
+		// TO-DO : Use Scene2d.ui and skin
+		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts/kenvector_future_thin.ttf"));
+		FreeTypeFontGenerator.FreeTypeFontParameter fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+		fontParameter.size = 12;
+		BitmapFont gameFont = fontGenerator.generateFont(fontParameter); // font size 12 pixels
+		fontGenerator.dispose();
+
+		scoreLabelStyle = new Label.LabelStyle();
+		scoreLabelStyle.font = gameFont;
+		scoreLabel = new Label(Integer.toString(actorManager.getScore()), scoreLabelStyle);
+		scoreLabel.setBounds(WIDTH * 0.01f, HEIGHT * 0.95f, WIDTH / 2f, 1f);
+		scoreLabel.setFontScale(.04f, .04f);
+		stage.addActor(scoreLabel);
+
+		timeLabel = new Label(gameTimeMinutes + ":" + gameTimeSeconds, scoreLabelStyle);
+		timeLabel.setBounds(WIDTH * 0.5f, HEIGHT * 0.95f, WIDTH, 1f);
+		timeLabel.setFontScale(.04f, .04f);
+		stage.addActor(timeLabel);
+		// END TO-DO
 
 		// instantiate actors
-		bgTexture = new Texture(Gdx.files.internal("background.png"));
-		bgSprite = new Sprite(bgTexture);
+		player = actorManager.addPlayerActor(new Vector2(WIDTH * 0.5f, HEIGHT * 0.25f), ActorType.PLAYER, CollisionGroup.PLAYER, 0);
+		actorManager.addPowerupActor(new Vector2(WIDTH * 0.80f, HEIGHT * 0.20f), CollisionGroup.POWERUP, ActorType.POWERUP_STAR);
+		actorManager.addPowerupActor(new Vector2(WIDTH * 0.30f, HEIGHT * 0.50f), CollisionGroup.POWERUP, ActorType.POWERUP_BOLT);
+		actorManager.addPowerupActor(new Vector2(WIDTH * 0.10f, HEIGHT * 0.75f), CollisionGroup.POWERUP, ActorType.POWERUP_BOLT);
+		actorManager.addEnemyShipActor(new Vector2(WIDTH * 0.70f, HEIGHT * 0.80f), CollisionGroup.ENEMY, ActorType.ENEMY_SHIP_BLACK);
 
-		player = actorManager.addPlayerActor(new Vector2(WIDTH / 2f, HEIGHT / 8), ActorType.PLAYER, CollisionGroup.PLAYER, 0);
-		actorManager.addPowerupActor(new Vector2(WIDTH / 8f, HEIGHT / 2f), CollisionGroup.POWERUP, ActorType.POWERUP_SHIELD);
-		//actorManager.addPowerupActor(new Vector2(WIDTH / 3, HEIGHT / 2), CollisionGroup.POWERUP, ActorType.POWERUP_BOLT);
-		//actorManager.addPowerupActor(new Vector2(WIDTH / 10, HEIGHT / 2), CollisionGroup.POWERUP, ActorType.POWERUP_BOLT);
-
-		enemyActorArray = new Array<EnemyActor>();
 		asteroidActorArray = actorManager.getAsteroidActorArray();
-
-		createAsteroids(10);
 		maxAsteroids = 10;
+		asteroidSpawnFrequency = 1f;
+		createAsteroids(1);
+		timeSinceLastAsteroid = 0f;
 	}
 
 	@Override
 	public void render () {
 		delta = Gdx.graphics.getDeltaTime();
+		// set background
 		Gdx.gl.glClearColor(0, 0, 0.2f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+		// draw game elements
 		camera.update();
 		debugRenderer.render(world, camera.combined);
 		batch.setProjectionMatrix(camera.combined);
 		stage.draw();
+		batch.begin();
+		batch.end();
 
 		gameTime += delta;
-		gameTimeMinutes = gameTime / 60f;
-		gameTimeSeconds = (gameTime - gameTimeMinutes) / 60.0f;
+		gameTimeMinutes = MathUtils.floor((gameTime - gameTimeSeconds) / 60);
+		gameTimeSeconds = MathUtils.floor(gameTime % 60);
+		timeLabel.setText(String.format("%02d:%02d", gameTimeMinutes, gameTimeSeconds));
+		updateScore(actorManager.getScore());
+
+		// process management actions for active actors (e.g. deletion)
 		actorManager.update(delta);
 
-		// Set up player movements
+		// set up player movements
 		registerMove();
 
 		stage.act(delta);
 
-		if (asteroidActorArray.size < maxAsteroids) {
+		timeSinceLastAsteroid += delta;
+		if (asteroidActorArray.size < maxAsteroids && timeSinceLastAsteroid > asteroidSpawnFrequency) {
 			createAsteroids(1);
+			timeSinceLastAsteroid = 0;
 		}
 
 		// step through Box2d physics world
@@ -136,14 +169,10 @@ public class Asteroidia extends Game implements ApplicationListener {
 		stage.dispose();
 		batch.dispose();
 		world.dispose();
+		for (SpaceActor spaceActor : actorManager.getActors()) {
+			spaceActor.getTexture().dispose();
+		}
 		debugRenderer.dispose();
-		player.getTexture().dispose();
-		for (AsteroidActor asteroidActor : asteroidActorArray) {
-			asteroidActor.getTexture().dispose();
-		}
-		for (ShotActor shotActor : player.getShotsActive()) {
-			shotActor.getTexture().dispose();
-		}
 	}
 
 	@Override
@@ -159,13 +188,15 @@ public class Asteroidia extends Game implements ApplicationListener {
 	}
 
 	public void registerMove() {
-		if(Gdx.input.isTouched()) {
-			// translate touch coordinates to Vector3 within camera
-			touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-			lastTouch.set(touchPos);
-			camera.unproject(touchPos);
-			player.setMoveTarget(touchPos);
-			player.setIsMoving(true);
+		if (Gdx.input.isTouched()) {
+			if (player != null) {
+				// translate touch coordinates to Vector3 within camera
+				touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
+				lastTouch.set(touchPos);
+				camera.unproject(touchPos);
+				player.setMoveTarget(touchPos);
+				player.setIsMoving(true);
+			}
 		}
 	}
 
@@ -175,7 +206,6 @@ public class Asteroidia extends Game implements ApplicationListener {
 			int range = MathUtils.random(10);
 			if (range < 3) {
 				asteroidType = ActorType.ENEMY_ASTEROID_SMALL;
-
 			}
 			else if (range < 7) {
 				asteroidType = ActorType.ENEMY_ASTEROID_MEDIUM;
@@ -185,6 +215,11 @@ public class Asteroidia extends Game implements ApplicationListener {
 			}
 			actorManager.addAsteroidActor(new Vector2(WIDTH / 2, HEIGHT / 2), CollisionGroup.ENEMY, 0, asteroidType);
 		}
+	}
 
+	public int updateScore(int score) {
+		this.score = score;
+		scoreLabel.setText(Integer.toString(score));
+		return score;
 	}
 }

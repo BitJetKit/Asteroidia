@@ -10,8 +10,11 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.Joint;
+import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.physics.box2d.joints.WeldJointDef;
 import com.badlogic.gdx.utils.Array;
 import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
@@ -49,13 +52,11 @@ public class PlayerActor extends SpaceActor {
     private Gun gunFront2;
     private Gun gunLeft;
     private Gun gunRight;
-    private Vector2 gunPos = new Vector2();
     private Array<ShotActor> shotsActive;
-    private float timeSinceLastShot = 0f;
-    private float timeSinceLastShotA = 0f;
     private ActorManager actorManager;
     private World world;
     private int score;
+    private float health;
 
     public PlayerActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup) {
         super(pos, world, actorIndex, collisionGroup);
@@ -63,8 +64,9 @@ public class PlayerActor extends SpaceActor {
         texture = new Texture(Gdx.files.internal("shipOrange.png"));
         width = 0.94f;
         height = 0.72f;
-        moveSpeed = 10f;
+        moveSpeed = 15f;
         angle = 0;
+        health = 2f;
         isMoving = false;
         isActive = true;
         actorManager = Asteroidia.actorManager;
@@ -79,7 +81,7 @@ public class PlayerActor extends SpaceActor {
         shotsActive = new Array<ShotActor>();
 
         // set gun to ship's tip
-        gunFront = addGun(worldPos.x + width/8, worldPos.y + height/2, angle, ActorType.PLAYER_SHOT_BULLET, 0.15f);
+        gunFront = addGun(angle, worldPos.x + width/8, worldPos.y + height/2, 0.15f, ActorType.PLAYER_SHOT_BULLET, CollisionGroup.PLAYER_SHOT);
         //gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, Gun.ShotType.LASER, 0.15f);
         //gunLeft = addGun(worldPos.x + width/4, worldPos.y + height, 45, Gun.ShotType.LASER, 0.15f);
         //gunRight = addGun(worldPos.x - width/4, worldPos.y + height, 315, Gun.ShotType.LASER, 0.15f);
@@ -90,7 +92,7 @@ public class PlayerActor extends SpaceActor {
         super.act(delta);
         move();
         updateWorldPos();
-        shoot(delta, actorManager);
+        shoot(delta);
     }
 
     @Override
@@ -126,7 +128,7 @@ public class PlayerActor extends SpaceActor {
         updateGunPos();
     }
 
-    public void shoot(float delta, ActorManager actorManager) {
+    public void shoot(float delta) {
         for (Gun gun : gunsEquipped) {
             gun.shoot(delta);
         }
@@ -159,15 +161,18 @@ public class PlayerActor extends SpaceActor {
         if (isActive) {
             isActive = false;
             isMoving = false;
+            if (shield != null) {
+                shield.destroy(world);
+            }
             world.destroyBody(body);
-            shield.destroy(world);
             System.out.println("============DEAD=============");
             remove();
         }
     }
 
-    public Gun addGun(float gunX, float gunY, float angle, ActorType shotType, float fireRate) {
-        Gun gun = new Gun(angle, gunX, gunY, fireRate, shotType);
+    public Gun addGun(float angle, float gunX, float gunY, float fireRate, ActorType shotType, CollisionGroup collisionGroup) {
+        Gun gun = new Gun(angle, gunX, gunY, fireRate, shotType, collisionGroup);
+        // match new gun's fire time to existing guns
         if(gunsEquipped.size > 0) {
             gun.setLastShotTime(gunsEquipped.get(0).getLastShotTime());
         }
@@ -207,7 +212,7 @@ public class PlayerActor extends SpaceActor {
         }
         // add second front gun
         else if (gunsEquipped.contains(gunFront, true)) {
-            gunFront2 = addGun(worldPos.x - width/8, worldPos.y + height, angle, ActorType.PLAYER_SHOT_BULLET, 0.15f);
+            gunFront2 = addGun(angle, worldPos.x - width/8, worldPos.y + height, 0.15f, ActorType.PLAYER_SHOT_BULLET, CollisionGroup.PLAYER_SHOT);
         }
     }
 
@@ -216,8 +221,8 @@ public class PlayerActor extends SpaceActor {
         worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
+    // ensure player movement will not leave screen
     public void restrictToWorld() {
-        // ensure player movement will not leave screen
         if(worldPos.x  < 0) {
             worldPos.x = 0;
             body.setTransform(worldPos, angle);
@@ -369,5 +374,13 @@ public class PlayerActor extends SpaceActor {
 
     public void setShield(ShieldActor shield) {
         this.shield = shield;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
     }
 }

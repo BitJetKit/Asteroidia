@@ -16,16 +16,18 @@ public class Gun {
     private float gunX;
     private float gunY;
     private ActorType shotType;
+    private CollisionGroup collisionGroup;
     private float fireRate;
     private float lastShotTime;
     private Array <ShotActor> shotsActive;
     private Sound laserSound;
 
-    public Gun(float angle, float x, float y, float fireRate, ActorType shotType) {
+    public Gun(float angle, float x, float y, float fireRate, ActorType shotType, CollisionGroup collisionGroup) {
         gunAngle = angle;
         gunX = x;
         gunY = y;
         this.shotType = shotType;
+        this.collisionGroup = collisionGroup;
         gunPos.set(gunX, gunY);
         this.fireRate = fireRate;
         lastShotTime = 0f;
@@ -38,7 +40,7 @@ public class Gun {
         lastShotTime += delta;
 
         if (lastShotTime > fireRate) {
-            ShotActor shot = Asteroidia.actorManager.addShotActor(gunPos, CollisionGroup.PLAYER_SHOT, gunAngle, this.shotType);
+            ShotActor shot = Asteroidia.actorManager.addShotActor(gunPos, this.shotType, this.collisionGroup, gunAngle);
             lastShotTime = 0f;
             shotsActive.add(shot);
             laserSound.play();

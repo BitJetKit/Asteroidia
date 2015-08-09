@@ -10,7 +10,10 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.semars.mygdx.game.ActorManager;
+import com.semars.mygdx.game.Asteroidia;
 
 /**
  * Created by semar on 7/24/15.
@@ -22,7 +25,6 @@ public class PowerupActor extends SpaceActor {
     private ActorData actorData;
     private float width;
     private float height;
-    private float radius;
     private float angle;
     private float rotationSpeed;
     private Vector2 worldPos = new Vector2();
@@ -30,6 +32,7 @@ public class PowerupActor extends SpaceActor {
     private boolean isActive;
     private Sound killSound;
     private ActorType actorType;
+    private int scoreGiven;
 
     public PowerupActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
         super(pos, world, actorIndex, collisionGroup);
@@ -42,7 +45,7 @@ public class PowerupActor extends SpaceActor {
                 height = 0.75f;
                 break;
             }
-            case PLAYER_SHIELD: {
+            case POWERUP_SHIELD: {
                 texture = new Texture(Gdx.files.internal("powerupBlue_shield.png"));
                 width = 0.75f;
                 height = 0.75f;
@@ -60,17 +63,22 @@ public class PowerupActor extends SpaceActor {
                 height = 0.30f;
                 break;
             }
+            default: {
+                texture = new Texture(Gdx.files.internal("powerupYellow_star.png"));
+                width = 0.75f;
+                height = 0.75f;
+                break;
+            }
         }
-        //texture = new Texture(Gdx.files.internal("pill_green.png"));
         angle = 0;
         rotationSpeed = 0;
-        this.radius = width / 2;
         setBounds(pos.x, pos.y, width, height);
         worldPos.set(pos.x, pos.y);
-        isMoving = false;
-        createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
-        setIsActive(true);
         killSound = Gdx.audio.newSound(Gdx.files.internal("sfx_shieldUp.ogg"));
+        scoreGiven = 0;
+        isMoving = false;
+        setIsActive(true);
+        createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
     }
 
     @Override
@@ -82,13 +90,13 @@ public class PowerupActor extends SpaceActor {
         bodyDef.fixedRotation = true;
         body = world.createBody(bodyDef);
         body.setUserData(actorData);
-        CircleShape shape = new CircleShape();
-        shape.setRadius(radius);
 
+        PolygonShape shape = new PolygonShape();
+        shape.setAsBox(width * 0.5f, height * 0.5f);
         FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.isSensor = true;
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
-        fixtureDef.isSensor = true;
         fixtureDef.filter.categoryBits = categoryBits;
         fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
@@ -127,9 +135,7 @@ public class PowerupActor extends SpaceActor {
     public void giveEffect(PlayerActor playerActor, ActorType actorType) {
         switch (actorType) {
             case POWERUP_STAR: {
-                int playerScore = playerActor.getScore();
-                int scoreGiven = 100;
-                playerActor.setScore(playerScore += scoreGiven);
+                scoreGiven = 500;
                 break;
             }
             case POWERUP_SHIELD: {
@@ -141,7 +147,6 @@ public class PowerupActor extends SpaceActor {
                 break;
             }
             case POWERUP_BOMB: {
-
                 break;
             }
         }
@@ -186,5 +191,9 @@ public class PowerupActor extends SpaceActor {
 
     public ActorType getActorType() {
         return actorType;
+    }
+
+    public int getScoreGiven() {
+        return scoreGiven;
     }
 }

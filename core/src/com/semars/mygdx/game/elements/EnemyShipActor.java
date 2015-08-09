@@ -3,7 +3,6 @@ package com.semars.mygdx.game.elements;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -12,54 +11,64 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.physics.box2d.joints.WeldJointDef;
+import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
 
-import java.util.Iterator;
-
 /**
- * Created by semar on 7/29/15.
- */
-public class ShieldActor extends SpaceActor {
+* Created by semar on 8/3/15.
+*/
+public class EnemyShipActor extends EnemyActor {
+
     private Body body;
     private Fixture fixture;
-    private Joint joint;
     private Texture texture;
     private ActorData actorData;
+    private ActorType actorType;
     private float width;
     private float height;
     private float radius;
     private float angle;
+    private float rotationSpeed;
     private float moveSpeed;
     private Vector2 worldPos = new Vector2();
-    private Vector2 moveTarget = new Vector2();
     private Vector2 moveDirection = new Vector2();
     private Vector2 moveVelocity = new Vector2();
     private Vector2 moveAmount = new Vector2();
     private Vector2 moveForce = new Vector2();
-    private SpaceActor shieldTarget;
     private boolean isMoving;
     private boolean isActive;
-    private Sound killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
+    private Sound killSound;
+    private float damageGiven;
+    private int scoreGiven;
     private float health;
+    private Gun gunFront;
 
-    public ShieldActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, SpaceActor shieldTarget) {
-        super(pos, world, actorIndex, collisionGroup);
+    public EnemyShipActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
+        super(pos, world, actorIndex, collisionGroup, actorType);
         actorData = new ActorData(actorIndex, collisionGroup);
-        texture = new Texture(Gdx.files.internal("shield3.png"));
-        width = 1.60f;
-        height = 1.52f;
+        this.actorType = actorType;
+        texture = new Texture(Gdx.files.internal("enemyBlackSmall1.png"));
+        killSound = Gdx.audio.newSound(Gdx.files.internal("boom.mp3"));
+        moveSpeed = 0.03f;
+        moveSpeed = moveSpeed * 1.2f;
+        width = 0.52f;
+        height = 0.42f;
         angle = 0;
+        rotationSpeed = 0f;
         radius = width / 2f;
-        setBounds(pos.x, pos.y, width, height);
         worldPos.set(pos.x, pos.y);
+        damageGiven = 5f;
+        health = 5f;
+        scoreGiven = 100;
+
+        setTexture(texture);
+        setBounds(pos.x, pos.y, width, height);
         isMoving = false;
-        this.shieldTarget = shieldTarget;
-        health = 100f;
-        setIsActive(true);
+        gunFront = new Gun(angle, worldPos.x, worldPos.y + height, 1f, ActorType.ENEMY_SHOT_BULLET, CollisionGroup.ENEMY_SHOT);
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
+        setVisible(false);
+        setIsActive(true);
     }
 
     @Override
@@ -80,12 +89,6 @@ public class ShieldActor extends SpaceActor {
         fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
         shape.dispose();
-
-        WeldJointDef jointDef = new WeldJointDef();
-        jointDef.bodyA = body;
-        jointDef.bodyB = shieldTarget.getBody();
-        jointDef.collideConnected = false;
-        joint = world.createJoint(jointDef);
     }
 
     @Override
@@ -98,15 +101,34 @@ public class ShieldActor extends SpaceActor {
     public void act(float delta) {
         super.act(delta);
         move();
+        //restrictToWorld();
         updateWorldPos();
+        shoot(delta, Asteroidia.actorManager);
         setPosition(worldPos.x, worldPos.y);
-        updateHealth(this.health);
+        setRotation(body.getAngle() * MathUtils.radiansToDegrees);
+    }
+
+    public void prepareMove(float moveDirectionX, float moveDirectionY, float moveSpeed) {
+        moveDirection.set(moveDirectionX - getX(), moveDirectionY - getY()).nor();
+        moveVelocity.set(moveDirection.scl(moveSpeed));
+        moveForce.set(moveVelocity.scl(Asteroidia.STEP));
     }
 
     @Override
     public void move() {
-        moveTarget.set(shieldTarget.getWorldPos());
-        //body.setTransform(moveTarget, this.angle);
+        if (isMoving) {
+            body.applyForceToCenter(moveForce, true);
+            body.setLinearVelocity(moveVelocity);
+            body.setAngularVelocity(rotationSpeed);
+        }
+        else {
+            float moveDirectionX = MathUtils.random(Asteroidia.WIDTH);
+            float moveDirectionY = MathUtils.random(Asteroidia.HEIGHT);
+            prepareMove(moveDirectionX, moveDirectionY, moveSpeed);
+            isMoving = true;
+        }
+        gunFront.setGunX(worldPos.x + width / 8f);
+        gunFront.setGunY(worldPos.y + height / 2f);
     }
 
     @Override
@@ -114,12 +136,15 @@ public class ShieldActor extends SpaceActor {
         if (isActive) {
             isActive = false;
             isMoving = false;
-            world.destroyJoint(joint);
             world.destroyBody(body);
             killSound.play();
-            System.out.println("Destroyed " + actorData.actorIndex + ", Shield");
+            System.out.println("Destroyed " + actorData.actorIndex + ", Ship");
             remove();
         }
+    }
+
+    public void shoot(float delta, ActorManager actorManager) {
+        gunFront.shoot(delta);
     }
 
     @Override
@@ -127,37 +152,32 @@ public class ShieldActor extends SpaceActor {
         worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
-    public void updateHealth(float health) {
-        if (health > 50) {
-            setVisible(true);
-            setIsActive(true);
-            body.setActive(true);
-            texture.dispose();
-            setTexture(new Texture(Gdx.files.internal("shield3.png")));
-        }
-        else if (health > 0) {
-            setVisible(true);
-            setIsActive(true);
-            body.setActive(true);
-            texture.dispose();
-            setTexture(new Texture(Gdx.files.internal("shield2.png")));
-        }
-        else {
-            setVisible(false);
-            setIsActive(false);
-            body.setActive(false);
-            setTexture(new Texture(Gdx.files.internal("shield1.png")));
-        }
-    }
 
-    /*/////////////////
-    Getters and Setters
-    *//////////////////
+/*/////////////////
+Getters and Setters
+*//////////////////
 
     public void setIndex(int newIndex){
         actorData.setInfo(newIndex, actorData.getCollisionGroup());
         body.setUserData(actorData);
     }
+
+    public int getScoreGiven() {
+        return scoreGiven;
+    }
+
+    public float getDamageGiven() {
+        return damageGiven;
+    }
+
+    public Body getBody() {
+        return body;
+    }
+
+    public float getMoveSpeed() {
+        return moveSpeed;
+    }
+
     @Override
     public ActorData getActorData() {
         return actorData;
@@ -181,6 +201,10 @@ public class ShieldActor extends SpaceActor {
         this.isActive = isActive;
     }
 
+    public ActorType getActorType() {
+        return actorType;
+    }
+
     public float getHealth() {
         return health;
     }
@@ -188,12 +212,7 @@ public class ShieldActor extends SpaceActor {
     public void setHealth(float health) {
         this.health = health;
     }
-
-    public Body getBody() {
-        return body;
-    }
-
     public void setTexture(Texture texture) {
         this.texture = texture;
-    }
+}
 }

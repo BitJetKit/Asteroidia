@@ -4,11 +4,12 @@ package com.semars.mygdx.game.elements;
  * Created by semar on 7/18/15.
  */
 public enum CollisionGroup {
-    PLAYER((short) 0x0002, (short) (0x0004 | 0x0010)),
+    PLAYER((short) 0x0002, (short) (0x0004 | 0x0010 | 0x0014)),
     ENEMY((short) 0x0004, (short) (0x0002 | 0x0008 | 0x0012)),
     PLAYER_SHOT((short) 0x0008, (short) (0x0004)),
     POWERUP((short) 0x0010, (short) (0x0002)),
-    SHIELD((short) 0x0012, (short) (0x0004));
+    SHIELD((short) 0x0012, (short) (0x0004 | 0x0014)),
+    ENEMY_SHOT((short) 0x0014, (short) (0x0002 | 0x0012));
 
     private short categoryBits;
     private short maskBits;
