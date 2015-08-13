@@ -15,13 +15,16 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
+import com.semars.mygdx.game.screens.GameScreen;
 
 /**
  * Created by semar on 7/9/15.
  */
 public class AsteroidActor extends EnemyActor implements Wrappable {
 
+    private ActorManager actorManager;
     private Body body;
     private Fixture fixture;
     private Texture texture;
@@ -47,6 +50,7 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
 
     public AsteroidActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
         super(pos, world, actorIndex, collisionGroup, actorType);
+        actorManager = GameScreen.actorManager;
         actorData = new ActorData(actorIndex, collisionGroup);
         this.actorType = actorType;
         moveSpeed = 0.03f;
@@ -201,9 +205,9 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
     public void randomizePosOutside() {
         int spawnPos = 0;
         // check player quadrant
-        if (Asteroidia.actorManager.getPlayerActor().getWorldPos().x < Asteroidia.WIDTH/2) {
+        if (actorManager.getPlayerActor().getWorldPos().x < Asteroidia.WIDTH/2) {
             // bottom left quadrant
-            if (Asteroidia.actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
+            if (actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
                 spawnPos = 0;
             }
             // top right quadrant
@@ -211,9 +215,9 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
                 spawnPos = 2;
             }
         }
-        else if (Asteroidia.actorManager.getPlayerActor().getWorldPos().x > Asteroidia.WIDTH/2) {
+        else if (actorManager.getPlayerActor().getWorldPos().x > Asteroidia.WIDTH/2) {
             // bottom right quadrant
-            if (Asteroidia.actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
+            if (actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
                 spawnPos = 0;
             }
             // top left quadrant

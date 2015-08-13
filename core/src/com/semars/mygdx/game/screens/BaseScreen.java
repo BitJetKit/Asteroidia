@@ -2,6 +2,7 @@ package com.semars.mygdx.game.screens;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -21,86 +22,73 @@ import com.semars.mygdx.game.Asteroidia;
  */
 public class BaseScreen implements Screen {
 
-    private final Asteroidia game;
-    protected final Stage stage;
-    protected Skin skin;
-    private SpriteBatch batch;
-    private BitmapFont font;
-    private Table table;
-
-    public static float WIDTH = 9.0f;
-    public static float HEIGHT = 16.0f;
+    protected final Asteroidia game;
+    protected Stage uiStage;
+    protected Skin uiSkin;
+    protected String screenName;
+    protected OrthographicCamera camera;
+    protected InputMultiplexer multiInputProcessor;
+    protected ScreenInputHandler screenInputHandler;
 
     public BaseScreen(Asteroidia game) {
         this.game = game;
-        stage = new Stage(new FitViewport(WIDTH, HEIGHT));
-        batch = new SpriteBatch();
-        skin = new Skin(Gdx.files.internal("data/uiskin.json"));
-        table = new Table(skin);
-        table.setFillParent(true);
-        stage.addActor(table);
+        uiStage = new Stage(new FitViewport(game.WIDTH * 40, game.HEIGHT * 40));
+        uiSkin = new Skin(Gdx.files.internal("data/uiskin.json"));
+        screenInputHandler = new ScreenInputHandler(game);
+        multiInputProcessor = new InputMultiplexer();
+
+        multiInputProcessor.addProcessor(uiStage);
+        multiInputProcessor.addProcessor(screenInputHandler);
+
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, game.WIDTH * 40, game.HEIGHT * 40);
     }
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(stage);
+        Gdx.app.log("Asteroidia", "Showing screen " + screenName);
+        Gdx.input.setInputProcessor(uiStage);
     }
 
     @Override
     public void render(float delta) {
-        stage.act(delta);
+        // set background
+        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        Gdx.gl.glClearColor( 0f, 0f, 0f, 1f );
-        Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT );
+        camera.update();
 
-        stage.draw();
+        uiStage.act(delta);
+        uiStage.draw();
     }
 
     @Override
     public void resize(int width, int height) {
-
+        Gdx.app.log("Asteroidia", "Resizing screen " + screenName + " to " + width + "x" + height);
+        //camera.setToOrtho(false, width, height);
+        //uiStage.setViewport(new FitViewport(width, height, camera));
     }
 
     @Override
     public void pause() {
-
+        Gdx.app.log("Asteroidia", "Pausing screen " + screenName);
     }
 
     @Override
     public void resume() {
-
+        Gdx.app.log("Asteroidia", "Resuming screen " + screenName);
     }
 
     @Override
     public void hide() {
+        Gdx.app.log("Asteroidia", "Hiding screen " + screenName);
         dispose();
     }
 
     @Override
     public void dispose() {
-        stage.dispose();
-        skin.dispose();
-        font.dispose();
-        batch.dispose();
-    }
-
-    public Skin getSkin() {
-        return skin;
-    }
-
-    public BitmapFont getFont() {
-        return font;
-    }
-
-    public SpriteBatch getBatch() {
-        return batch;
-    }
-
-    public Stage getStage() {
-        return stage;
-    }
-
-    public Table getTable() {
-        return table;
+        Gdx.app.log("Asteroidia", "Disposing screen " + screenName);
+        uiStage.dispose();
+        uiSkin.dispose();
     }
 }

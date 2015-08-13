@@ -11,12 +11,16 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
+import com.semars.mygdx.game.screens.GameScreen;
 
 /**
  * Created by semar on 7/13/15.
  */
 public class ShotActor extends SpaceActor {
+
+    private ActorManager actorManager;
     private Body body;
     private Fixture fixture;
     private ActorData actorData;
@@ -34,6 +38,7 @@ public class ShotActor extends SpaceActor {
 
     public ShotActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType, float angle) {
         super(pos, world, actorIndex, collisionGroup);
+        actorManager = GameScreen.actorManager;
         actorData = new ActorData(actorIndex, collisionGroup);
         this.actorType = actorType;
         switch (this.actorType) {
@@ -110,7 +115,7 @@ public class ShotActor extends SpaceActor {
         setRotation(body.getAngle() * MathUtils.radiansToDegrees);
 
         if (lifeTime > 3f) {
-            Asteroidia.actorManager.deleteActor(this);
+            actorManager.deleteActor(this);
         }
         lifeTime += delta;
     }

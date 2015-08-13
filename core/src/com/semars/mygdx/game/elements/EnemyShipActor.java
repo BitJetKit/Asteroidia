@@ -14,12 +14,14 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
+import com.semars.mygdx.game.screens.GameScreen;
 
 /**
 * Created by semar on 8/3/15.
 */
 public class EnemyShipActor extends EnemyActor {
 
+    private ActorManager actorManager;
     private Body body;
     private Fixture fixture;
     private Texture texture;
@@ -46,6 +48,7 @@ public class EnemyShipActor extends EnemyActor {
 
     public EnemyShipActor(Vector2 pos, World world, int actorIndex, CollisionGroup collisionGroup, ActorType actorType) {
         super(pos, world, actorIndex, collisionGroup, actorType);
+        actorManager = GameScreen.actorManager;
         actorData = new ActorData(actorIndex, collisionGroup);
         this.actorType = actorType;
         texture = new Texture(Gdx.files.internal("enemyBlackSmall1.png"));
@@ -103,7 +106,7 @@ public class EnemyShipActor extends EnemyActor {
         move();
         //restrictToWorld();
         updateWorldPos();
-        shoot(delta, Asteroidia.actorManager);
+        shoot(delta, actorManager);
         setPosition(worldPos.x, worldPos.y);
         setRotation(body.getAngle() * MathUtils.radiansToDegrees);
     }

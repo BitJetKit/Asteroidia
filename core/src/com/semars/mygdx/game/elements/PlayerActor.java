@@ -18,6 +18,7 @@ import com.badlogic.gdx.physics.box2d.joints.WeldJointDef;
 import com.badlogic.gdx.utils.Array;
 import com.semars.mygdx.game.ActorManager;
 import com.semars.mygdx.game.Asteroidia;
+import com.semars.mygdx.game.screens.GameScreen;
 
 /**
  * Created by semar on 6/28/15.
@@ -69,7 +70,7 @@ public class PlayerActor extends SpaceActor {
         health = 2f;
         isMoving = false;
         isActive = true;
-        actorManager = Asteroidia.actorManager;
+        actorManager = GameScreen.actorManager;
         this.world = world;
 
         setBounds(pos.x, pos.y, width, height);
