@@ -6,13 +6,17 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -35,14 +39,10 @@ public class MainMenuScreen extends BaseScreen {
 
     private Sound clickSound;
 
-    public MainMenuScreen(Asteroidia game) {
+    public MainMenuScreen(final Asteroidia game) {
         super(game);
         screenName = "MainMenu";
-    }
 
-    @Override
-    public void show() {
-        super.show();
         font = new BitmapFont();
         batch = new SpriteBatch();
         clickSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_twoTone.ogg"));
@@ -53,7 +53,8 @@ public class MainMenuScreen extends BaseScreen {
         table.setFillParent(true);
 
         // set up Title
-        table.add("Asteroidia").spaceBottom(48f);
+        Image titleImage = new Image(new Texture(Gdx.files.internal("title.png")));
+        table.add(titleImage).spaceBottom(48f);
         table.row();
 
         // set up "Survival" button
@@ -67,7 +68,7 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
         uiStage.addActor(survivalButton);
-        table.add(survivalButton).size(120f, 48f).uniform().spaceBottom(24f);
+        table.add(survivalButton).size(200f, 48f).uniform().spaceBottom(24f);
         table.row();
 
         // set up "Quit" button
@@ -78,21 +79,23 @@ public class MainMenuScreen extends BaseScreen {
                 clickSound.play();
                 Gdx.app.exit();
             }
-        } );
+        });
         uiStage.addActor(quitButton);
-        table.add(quitButton).size(120f, 48f).uniform().spaceBottom(24f);
+        table.add(quitButton).size(200f, 48f).uniform().spaceBottom(24f);
         table.row();
+    }
+
+    @Override
+    public void show() {
+        super.show();
     }
 
     @Override
     public void render(float delta) {
         super.render(delta);
-        //batch.setProjectionMatrix(camera.combined);
-        //batch.begin();
-        //batch.end();
+        camera.update();
+        uiStage.act(delta);
+        uiStage.draw();
         //uiStage.setDebugAll(true);
-
     }
-
-    // TO-DO: Fix resize. Click doesn't project correctly
 }

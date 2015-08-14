@@ -58,10 +58,15 @@ public class GameScreen extends BaseScreen {
     public GameScreen(Asteroidia game) {
         super(game);
         screenName = "Game";
+        create();
     }
 
     @Override
     public void show() {
+
+    }
+
+    public void create() {
         // set up Box2d physics world
         Box2D.init();
 
@@ -86,12 +91,12 @@ public class GameScreen extends BaseScreen {
         scoreLabelStyle.font = game.getGameFont();
         scoreLabel = new Label(Integer.toString(actorManager.getScore()), scoreLabelStyle);
         scoreLabel.setBounds(Asteroidia.WIDTH * 0.01f, Asteroidia.HEIGHT * 0.95f, Asteroidia.WIDTH / 2f, 1f);
-        scoreLabel.setFontScale(.04f, .04f);
+        scoreLabel.setFontScale(.01f, .01f);
         stage.addActor(scoreLabel);
 
         timeLabel = new Label(gameTimeMinutes + ":" + gameTimeSeconds, scoreLabelStyle);
         timeLabel.setBounds(Asteroidia.WIDTH * 0.5f, Asteroidia.HEIGHT * 0.95f, Asteroidia.WIDTH, 1f);
-        timeLabel.setFontScale(.04f, .04f);
+        timeLabel.setFontScale(.01f, .01f);
         stage.addActor(timeLabel);
         // END TO-DO
 
@@ -119,7 +124,7 @@ public class GameScreen extends BaseScreen {
 
         // draw game elements
         camera.update();
-        debugRenderer.render(world, camera.combined);
+        //debugRenderer.render(world, camera.combined);
         batch.setProjectionMatrix(camera.combined);
         stage.draw();
         batch.begin();
@@ -151,11 +156,6 @@ public class GameScreen extends BaseScreen {
             world.step(1f/Asteroidia.STEP, Asteroidia.VELOCITY_ITER, Asteroidia.POSITION_ITER);
             accumulator -= 1f/Asteroidia.STEP;
         }
-    }
-
-    @Override
-    public void resize(int width, int height) {
-
     }
 
     @Override

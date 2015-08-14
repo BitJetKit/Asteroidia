@@ -65,8 +65,7 @@ public class BaseScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         Gdx.app.log("Asteroidia", "Resizing screen " + screenName + " to " + width + "x" + height);
-        //camera.setToOrtho(false, width, height);
-        //uiStage.setViewport(new FitViewport(width, height, camera));
+        uiStage.getViewport().update(width, height, true);
     }
 
     @Override

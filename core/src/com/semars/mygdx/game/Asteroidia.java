@@ -41,6 +41,7 @@ public class Asteroidia extends Game implements ApplicationListener {
 
 	public static float WIDTH = 9.0f;
 	public static float HEIGHT = 16.0f;
+	public static final float ASPECT_RATIO = WIDTH/HEIGHT;
 	public static final float STEP = 60.0f;
 	public static final int VELOCITY_ITER = 8;
 	public static final int POSITION_ITER = 3;
@@ -52,14 +53,15 @@ public class Asteroidia extends Game implements ApplicationListener {
 
 	@Override
 	public void create () {
-		mainMenuScreen = new MainMenuScreen(this);
-		gameScreen = new GameScreen(this);
-
 		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/ProFont.ttf"));
 		FreeTypeFontGenerator.FreeTypeFontParameter fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 		fontParameter.size = (int)(48);
 		gameFont = fontGenerator.generateFont(fontParameter);
 		fontGenerator.dispose();
+
+		mainMenuScreen = new MainMenuScreen(this);
+		gameScreen = new GameScreen(this);
+
 
 		setScreen(mainMenuScreen);
 	}
