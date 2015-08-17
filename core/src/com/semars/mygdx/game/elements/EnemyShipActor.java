@@ -75,7 +75,7 @@ public class EnemyShipActor extends EnemyActor {
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
+    public Body createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
@@ -92,6 +92,7 @@ public class EnemyShipActor extends EnemyActor {
         fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
         shape.dispose();
+        return body;
     }
 
     @Override

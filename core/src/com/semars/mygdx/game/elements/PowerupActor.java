@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -78,11 +79,12 @@ public class PowerupActor extends SpaceActor {
         scoreGiven = 0;
         isMoving = false;
         setIsActive(true);
+        setVisible(false);
         createBody(world, pos, this.angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
+    public Body createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
@@ -101,6 +103,7 @@ public class PowerupActor extends SpaceActor {
         fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
         shape.dispose();
+        return body;
     }
 
     @Override
@@ -112,7 +115,7 @@ public class PowerupActor extends SpaceActor {
     public void act(float delta) {
         super.act(delta);
         move();
-        //restrictToWorld();
+        restrictToWorld(body);
         updateWorldPos();
     }
 
@@ -150,6 +153,23 @@ public class PowerupActor extends SpaceActor {
                 break;
             }
         }
+    }
+
+    // ensure movement will not leave screen
+    public void restrictToWorld(Body body) {
+        if(worldPos.x  < 0) {
+            worldPos.x = 0;
+        }
+        if(worldPos.x > Asteroidia.WIDTH) {
+            worldPos.x = Asteroidia.WIDTH;
+        }
+        if(worldPos.y - height /2 < 0) {
+            worldPos.y = 0 + height /2;
+        }
+        if(worldPos.y - height /2 > Asteroidia.HEIGHT - height) {
+            worldPos.y = Asteroidia.HEIGHT - height /2;
+        }
+        body.setTransform(worldPos, body.getAngle());
     }
 
     @Override

@@ -46,9 +46,6 @@ public class Asteroidia extends Game implements ApplicationListener {
 	public static final int VELOCITY_ITER = 8;
 	public static final int POSITION_ITER = 3;
 
-	private MainMenuScreen mainMenuScreen;
-	private GameScreen gameScreen;
-
 	protected BitmapFont gameFont;
 
 	@Override
@@ -59,18 +56,10 @@ public class Asteroidia extends Game implements ApplicationListener {
 		gameFont = fontGenerator.generateFont(fontParameter);
 		fontGenerator.dispose();
 
-		mainMenuScreen = new MainMenuScreen(this);
-		gameScreen = new GameScreen(this);
-
-
-		setScreen(mainMenuScreen);
+		setScreen(new MainMenuScreen(this));
 	}
 
 	public BitmapFont getGameFont() {
 		return gameFont;
-	}
-
-	public GameScreen getGameScreen() {
-		return gameScreen;
 	}
 }

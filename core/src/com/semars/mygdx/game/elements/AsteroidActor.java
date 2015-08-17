@@ -28,14 +28,12 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
     private Body body;
     private Fixture fixture;
     private Texture texture;
-    private ActorData actorData;
-    private float width;
-    private float height;
+    protected ActorData actorData;
     private float radius;
     private float angle;
     private float rotationSpeed;
     private float moveSpeed;
-    private Vector2 worldPos = new Vector2();
+    //private Vector2 worldPos = new Vector2();
     private Vector2 moveDirection = new Vector2();
     private Vector2 moveVelocity = new Vector2();
     private Vector2 moveAmount = new Vector2();
@@ -102,12 +100,12 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
         worldPos.set(pos.x, pos.y);
         isMoving = false;
         setVisible(false);
-        createBody(world, pos, angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits());
+        setBody(createBody(world, pos, angle, 0, 0, collisionGroup.getCategoryBits(), collisionGroup.getMaskBits()));
         setIsActive(true);
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
+    public Body createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
@@ -124,10 +122,11 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
         fixtureDef.filter.maskBits = maskBits;
         fixture = body.createFixture(fixtureDef);
         shape.dispose();
+        return body;
     }
 
     @Override
-    public void draw (Batch batch, float parentAlpha) {
+    public void draw(Batch batch, float parentAlpha) {
         batch.draw(texture, worldPos.x - width / 2, worldPos.y - height / 2, this.width / 2, this.height / 2, this.width, this.height,
                 this.getScaleX(), this.getScaleY(), this.getRotation(), 0, 0, texture.getWidth(), texture.getHeight(), false, false);
     }
@@ -135,12 +134,12 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
     @Override
     public void act(float delta) {
         super.act(delta);
-        move();
         //restrictToWorld();
+        move();
         updateWorldPos();
         wrapEdge();
         setPosition(worldPos.x, worldPos.y);
-        setRotation(body.getAngle() * MathUtils.radiansToDegrees);
+        setRotation(getBody().getAngle() * MathUtils.radiansToDegrees);
     }
 
     public void prepareMove(float moveDirectionX, float moveDirectionY, float moveSpeed) {
@@ -169,31 +168,11 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
         if (isActive) {
             isActive = false;
             isMoving = false;
-            world.destroyBody(body);
+            world.destroyBody(getBody());
             killSound.play();
             System.out.println("Destroyed " + actorData.actorIndex + ", Asteroid");
             remove();
         }
-    }
-
-    public void wrapEdge() {
-        // Top
-        if (worldPos.y - height/2 > Asteroidia.HEIGHT) {
-            worldPos.y = worldPos.y - Asteroidia.HEIGHT - height/2;
-        }
-        // Right
-        if (worldPos.x - height/2 > Asteroidia.WIDTH) {
-            worldPos.x = worldPos.x - Asteroidia.WIDTH - width/2;
-        }
-        // Bottom
-        if (worldPos.y < -1 * height/2) {
-            worldPos.y = Asteroidia.HEIGHT - worldPos.y - height/2;
-        }
-        // Left
-        if (worldPos.x < -1 * width/2) {
-            worldPos.x = Asteroidia.WIDTH - worldPos.x - width/2;
-        }
-        body.setTransform(worldPos, body.getAngle());
     }
 
     @Override
@@ -201,64 +180,13 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
         worldPos.set(body.getPosition().x, body.getPosition().y);
     }
 
-    // TO-DO : make sure spawn does not occur near player
-    public void randomizePosOutside() {
-        int spawnPos = 0;
-        // check player quadrant
-        if (actorManager.getPlayerActor().getWorldPos().x < Asteroidia.WIDTH/2) {
-            // bottom left quadrant
-            if (actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
-                spawnPos = 0;
-            }
-            // top right quadrant
-            else {
-                spawnPos = 2;
-            }
-        }
-        else if (actorManager.getPlayerActor().getWorldPos().x > Asteroidia.WIDTH/2) {
-            // bottom right quadrant
-            if (actorManager.getPlayerActor().getWorldPos().y < Asteroidia.WIDTH/2) {
-                spawnPos = 0;
-            }
-            // top left quadrant
-            else {
-                spawnPos = 1;
-            }
-        }
-        else {
-           spawnPos = MathUtils.random(2);
-        }
-        switch (spawnPos) {
-            // Top
-            case 0: {
-                worldPos.y = Asteroidia.HEIGHT + height;
-                worldPos.x = MathUtils.random(-1 * width, Asteroidia.WIDTH + width);
-                break;
-            }
-            // Right
-            case 1: {
-                worldPos.y = MathUtils.random(-1 * height, Asteroidia.HEIGHT + height);
-                worldPos.x = Asteroidia.WIDTH + width;
-                break;
-            }
-            // Bottom
-            /*case 2: {
-                worldPos.y = -1 * height;
-                worldPos.x = MathUtils.random(-1 * width, Asteroidia.WIDTH + width);
-                break;
-            }*/
-            // Left
-            case 2: {
-                worldPos.y = MathUtils.random(-1 * height, Asteroidia.HEIGHT + height);
-                worldPos.x = -1 * width;
-                break;
-            }
-        }
-        body.setTransform(worldPos, angle);
+    @Override
+    public void spawnAtQuadrant(int spawnQuadrant) {
+        super.spawnAtQuadrant(spawnQuadrant);
         float moveDirectionX = worldPos.x;
         float moveDirectionY = worldPos.y;
         prepareMove(moveDirectionX, moveDirectionY, moveSpeed);
-        System.out.println(" ASTEROID SPAWN: " + spawnPos);
+        System.out.println(" ASTEROID SPAWN: " + spawnQuadrant);
     }
 
     /*/////////////////
@@ -280,6 +208,11 @@ public class AsteroidActor extends EnemyActor implements Wrappable {
 
     public Body getBody() {
         return body;
+    }
+
+    @Override
+    public void setBody(Body body) {
+        this.body = body;
     }
 
     public float getMoveSpeed() {

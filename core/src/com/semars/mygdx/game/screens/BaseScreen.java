@@ -1,19 +1,12 @@
 package com.semars.mygdx.game.screens;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.semars.mygdx.game.Asteroidia;
 
@@ -26,7 +19,7 @@ public class BaseScreen implements Screen {
     protected Stage uiStage;
     protected Skin uiSkin;
     protected String screenName;
-    protected OrthographicCamera camera;
+    protected OrthographicCamera uiCam;
     protected InputMultiplexer multiInputProcessor;
     protected ScreenInputHandler screenInputHandler;
 
@@ -40,14 +33,14 @@ public class BaseScreen implements Screen {
         multiInputProcessor.addProcessor(uiStage);
         multiInputProcessor.addProcessor(screenInputHandler);
 
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, game.WIDTH * 40, game.HEIGHT * 40);
+        uiCam = new OrthographicCamera();
+        uiCam.setToOrtho(false, game.WIDTH * 40, game.HEIGHT * 40);
     }
 
     @Override
     public void show() {
         Gdx.app.log("Asteroidia", "Showing screen " + screenName);
-        Gdx.input.setInputProcessor(uiStage);
+        Gdx.input.setInputProcessor(multiInputProcessor);
     }
 
     @Override
@@ -56,8 +49,8 @@ public class BaseScreen implements Screen {
         Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        camera.update();
-
+        uiCam.update();
+        uiStage.getViewport().apply();
         uiStage.act(delta);
         uiStage.draw();
     }

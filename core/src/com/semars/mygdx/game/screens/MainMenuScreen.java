@@ -63,8 +63,7 @@ public class MainMenuScreen extends BaseScreen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 clickSound.play();
-                survivalButton.setText("Clicked");
-                game.setScreen(game.getGameScreen());
+                game.setScreen(new GameScreen(game));
             }
         });
         uiStage.addActor(survivalButton);
@@ -93,9 +92,6 @@ public class MainMenuScreen extends BaseScreen {
     @Override
     public void render(float delta) {
         super.render(delta);
-        camera.update();
-        uiStage.act(delta);
-        uiStage.draw();
         //uiStage.setDebugAll(true);
     }
 }

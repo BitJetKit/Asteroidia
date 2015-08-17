@@ -125,7 +125,7 @@ public class PlayerActor extends SpaceActor {
         body.applyForce(moveForce, body.getWorldCenter(), true);
 
         updateWorldPos();
-        restrictToWorld();
+        restrictToWorld(body);
         updateGunPos();
     }
 
@@ -136,7 +136,7 @@ public class PlayerActor extends SpaceActor {
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
+    public Body createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
@@ -155,6 +155,7 @@ public class PlayerActor extends SpaceActor {
         fixture = body.createFixture(fixtureDef);
 
         shape.dispose();
+        return body;
     }
 
     @Override
@@ -166,9 +167,26 @@ public class PlayerActor extends SpaceActor {
                 shield.destroy(world);
             }
             world.destroyBody(body);
-            System.out.println("============DEAD=============");
+            Gdx.app.log("Player", "DEAD");
             remove();
         }
+    }
+
+    // ensure movement will not leave screen
+    public void restrictToWorld(Body body) {
+        if(worldPos.x  < 0) {
+            worldPos.x = 0;
+        }
+        if(worldPos.x > Asteroidia.WIDTH) {
+            worldPos.x = Asteroidia.WIDTH;
+        }
+        if(worldPos.y - height /2 < 0) {
+            worldPos.y = 0 + height /2;
+        }
+        if(worldPos.y - height /2 > Asteroidia.HEIGHT - height) {
+            worldPos.y = Asteroidia.HEIGHT - height /2;
+        }
+        body.setTransform(worldPos, body.getAngle());
     }
 
     public Gun addGun(float angle, float gunX, float gunY, float fireRate, ActorType shotType, CollisionGroup collisionGroup) {
@@ -220,26 +238,6 @@ public class PlayerActor extends SpaceActor {
     @Override
     public void updateWorldPos() {
         worldPos.set(body.getPosition().x, body.getPosition().y);
-    }
-
-    // ensure player movement will not leave screen
-    public void restrictToWorld() {
-        if(worldPos.x  < 0) {
-            worldPos.x = 0;
-            body.setTransform(worldPos, angle);
-        }
-        if(worldPos.x > Asteroidia.WIDTH) {
-            worldPos.x = Asteroidia.WIDTH;
-            body.setTransform(worldPos, angle);
-        }
-        if(worldPos.y - height /2 < 0) {
-            worldPos.y = 0 + height /2;
-            body.setTransform(worldPos, angle);
-        }
-        if(worldPos.y - height /2 > Asteroidia.HEIGHT - height) {
-            worldPos.y = Asteroidia.HEIGHT - height /2;
-            body.setTransform(worldPos, angle);
-        }
     }
 
     /*/////////////////

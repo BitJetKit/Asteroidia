@@ -79,6 +79,9 @@ public class ActorManager implements ContactListener {
     public void deleteActor(SpaceActor actor) {
         System.out.println(actor.getActorData().getActorIndex() + ", " + actor + " added to delete List");
         deleteList.add(actor);
+        if (actor.getClass() == playerActor.getClass()) {
+
+        }
     }
 
     // instantiate actor at given position in world, set index as last item in actors array
@@ -94,8 +97,6 @@ public class ActorManager implements ContactListener {
         AsteroidActor asteroidActor = new AsteroidActor(pos, world, actors.size(), collisionGroup, actorType);
         actors.add(asteroidActor);
         stage.addActor(asteroidActor);
-        asteroidActor.randomizePosOutside();
-        asteroidActor.setVisible(true);
         asteroidActorArray.add(asteroidActor);
         return asteroidActor;
     }

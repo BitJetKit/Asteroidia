@@ -18,18 +18,15 @@ import com.semars.mygdx.game.Asteroidia;
  * Created by semar on 7/9/15.
  */
 public abstract class EnemyActor extends SpaceActor {
-    private Body body;
+    protected Body body;
     private Fixture fixture;
     private Texture texture;
-    private ActorData actorData;
+    protected ActorData actorData;
     private ActorType actorType;
-    private float width;
-    private float height;
     private float radius;
     private float angle;
     private float rotationSpeed;
     private float moveSpeed;
-    private Vector2 worldPos = new Vector2();
     private Vector2 moveDirection = new Vector2();
     private Vector2 moveVelocity = new Vector2();
     private Vector2 moveAmount = new Vector2();
@@ -66,13 +63,13 @@ public abstract class EnemyActor extends SpaceActor {
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
+    public Body createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
         bodyDef.angle = angle;
-        body = world.createBody(bodyDef);
-        body.setUserData(actorData);
+        setBody(world.createBody(bodyDef));
+        getBody().setUserData(actorData);
 
         CircleShape shape = new CircleShape();
         shape.setRadius(radius);
@@ -81,8 +78,10 @@ public abstract class EnemyActor extends SpaceActor {
         fixtureDef.density = 1f;
         fixtureDef.filter.categoryBits = categoryBits;
         fixtureDef.filter.maskBits = maskBits;
-        fixture = body.createFixture(fixtureDef);
+        fixture = getBody().createFixture(fixtureDef);
         shape.dispose();
+
+        return getBody();
     }
 
     @Override
@@ -110,9 +109,9 @@ public abstract class EnemyActor extends SpaceActor {
     @Override
     public void move() {
         if (isMoving) {
-            body.applyForceToCenter(moveForce, true);
-            body.setLinearVelocity(moveVelocity);
-            body.setAngularVelocity(rotationSpeed);
+            getBody().applyForceToCenter(moveForce, true);
+            getBody().setLinearVelocity(moveVelocity);
+            getBody().setAngularVelocity(rotationSpeed);
         }
         else {
             float moveDirectionX = MathUtils.random(Asteroidia.WIDTH);
@@ -127,7 +126,7 @@ public abstract class EnemyActor extends SpaceActor {
         if (isActive) {
             isActive = false;
             isMoving = false;
-            world.destroyBody(body);
+            world.destroyBody(getBody());
             killSound.play();
             System.out.println("Destroyed " + actorData.actorIndex + ", Enemy");
             remove();
@@ -159,6 +158,10 @@ public abstract class EnemyActor extends SpaceActor {
 
     public Body getBody() {
         return body;
+    }
+
+    public void setBody(Body body) {
+        this.body = body;
     }
 
     public float getMoveSpeed() {

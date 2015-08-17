@@ -63,7 +63,7 @@ public class ShieldActor extends SpaceActor {
     }
 
     @Override
-    public void createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
+    public Body createBody(World world, Vector2 pos, float angle, float density, float restitution, short categoryBits, short maskBits) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(pos.x, pos.y);
@@ -86,6 +86,7 @@ public class ShieldActor extends SpaceActor {
         jointDef.bodyB = shieldTarget.getBody();
         jointDef.collideConnected = false;
         joint = world.createJoint(jointDef);
+        return body;
     }
 
     @Override
