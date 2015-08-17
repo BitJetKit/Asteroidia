@@ -104,7 +104,7 @@ public class GameScreen extends BaseScreen {
 
         // instantiate actors
         player = actorManager.addPlayerActor(new Vector2(Asteroidia.WIDTH * 0.5f, Asteroidia.HEIGHT * 0.25f), ActorType.PLAYER, CollisionGroup.PLAYER, 0);
-        actorManager.addEnemyShipActor(new Vector2(Asteroidia.WIDTH * 0.70f, Asteroidia.HEIGHT * 0.80f), CollisionGroup.ENEMY, ActorType.ENEMY_SHIP_BLACK);
+        //actorManager.addEnemyShipActor(new Vector2(Asteroidia.WIDTH * 0.70f, Asteroidia.HEIGHT * 0.80f), CollisionGroup.ENEMY, ActorType.ENEMY_SHIP_BLACK);
 
         asteroidActorArray = actorManager.getAsteroidActorArray();
         maxAsteroids = 15;
